@@ -1,9 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut } from 'lucide-react';
 
-import { storage } from './lib/storage.js';
 import { toDateStr, todayStr, addDaysStr, monthLabel, buildWeeks, DOW } from './lib/dateHelpers.js';
 import { C, WEEK_COLORS, FONT_IMPORT, DEFAULT_HABITS, DEFAULT_CATEGORIES, DEFAULT_FINANCE_CATEGORIES } from './theme.js';
+import { signOut } from './lib/auth.js';
+import * as habitsDb from './lib/db/habits.js';
+import * as tasksDb from './lib/db/tasks.js';
+import * as financeDb from './lib/db/finance.js';
 
 import StatCard from './components/common/StatCard.jsx';
 import TrendChart from './components/common/TrendChart.jsx';
@@ -18,12 +21,12 @@ import FinanceCategoryPanel from './components/finance/FinanceCategoryPanel.jsx'
 
 export default function HabitSheet() {
   const [loading, setLoading] = useState(true);
-  const [habits, setHabits] = useState(DEFAULT_HABITS);
+  const [habits, setHabits] = useState([]);
   const [logs, setLogs] = useState({});
   const [tasks, setTasks] = useState([]);
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [financeCategories, setFinanceCategories] = useState(DEFAULT_FINANCE_CATEGORIES);
+  const [financeCategories, setFinanceCategories] = useState([]);
   const [page, setPage] = useState('habits'); // 'habits' | 'tasks' | 'finance'
   const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [showAdd, setShowAdd] = useState(false);
@@ -40,125 +43,152 @@ export default function HabitSheet() {
 
   useEffect(() => {
     (async () => {
-      let h = DEFAULT_HABITS, l = {}, t = [], cats = DEFAULT_CATEGORIES, txns = [], finCats = DEFAULT_FINANCE_CATEGORIES;
-      try { const r = await storage.get('habits-config'); if (r?.value) h = JSON.parse(r.value); } catch (e) {}
-      try { const r = await storage.get('logs'); if (r?.value) l = JSON.parse(r.value); } catch (e) {}
-      try { const r = await storage.get('tasks'); if (r?.value) t = JSON.parse(r.value); } catch (e) {}
-      try { const r = await storage.get('task-categories'); if (r?.value) cats = JSON.parse(r.value); } catch (e) {}
-      try { const r = await storage.get('transactions'); if (r?.value) txns = JSON.parse(r.value); } catch (e) {}
-      try { const r = await storage.get('finance-categories'); if (r?.value) finCats = JSON.parse(r.value); } catch (e) {}
-      setHabits(h); setLogs(l); setTasks(t); setCategories(cats); setTransactions(txns); setFinanceCategories(finCats); setLoading(false);
-      if (h === DEFAULT_HABITS) { try { await storage.set('habits-config', JSON.stringify(h)); } catch (e) {} }
+      try {
+        let [h, cats, finCats] = await Promise.all([
+          habitsDb.listHabits(),
+          tasksDb.listTaskCategories(),
+          financeDb.listFinanceCategories(),
+        ]);
+        // First time this user has ever logged in: seed the starter data
+        // once, server-side, so it's real rows from the start.
+        if (h.length === 0) h = await habitsDb.seedDefaultHabits(DEFAULT_HABITS);
+        if (cats.length === 0) cats = await tasksDb.seedDefaultTaskCategories(DEFAULT_CATEGORIES);
+        if (finCats.length === 0) finCats = await financeDb.seedDefaultFinanceCategories(DEFAULT_FINANCE_CATEGORIES);
+
+        const [l, t, txns] = await Promise.all([
+          habitsDb.listLogs(),
+          tasksDb.listTasks(),
+          financeDb.listTransactions(),
+        ]);
+        setHabits(h); setLogs(l); setTasks(t); setCategories(cats); setTransactions(txns); setFinanceCategories(finCats);
+      } catch (e) {
+        console.error('Failed to load data', e);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(null), 2000); };
-
-  const persistHabits = useCallback(async (next) => {
-    setHabits(next);
-    try { await storage.set('habits-config', JSON.stringify(next)); } catch (e) { showToast('Save failed'); }
-  }, []);
-  const persistLogs = useCallback(async (next) => {
-    setLogs(next);
-    try { await storage.set('logs', JSON.stringify(next)); } catch (e) { showToast('Save failed'); }
-  }, []);
-  const persistTasks = useCallback(async (next) => {
-    setTasks(next);
-    try { await storage.set('tasks', JSON.stringify(next)); } catch (e) { showToast('Save failed'); }
-  }, []);
-  const persistCategories = useCallback(async (next) => {
-    setCategories(next);
-    try { await storage.set('task-categories', JSON.stringify(next)); } catch (e) { showToast('Save failed'); }
-  }, []);
-  const persistTransactions = useCallback(async (next) => {
-    setTransactions(next);
-    try { await storage.set('transactions', JSON.stringify(next)); } catch (e) { showToast('Save failed'); }
-  }, []);
-  const persistFinanceCategories = useCallback(async (next) => {
-    setFinanceCategories(next);
-    try { await storage.set('finance-categories', JSON.stringify(next)); } catch (e) { showToast('Save failed'); }
-  }, []);
+  const showError = (e) => { console.error(e); showToast(e?.message || 'Something went wrong'); };
 
   function addTask(task) {
-    persistTasks([{ ...task, id: 't' + Date.now(), done: false, createdAt: todayStr() }, ...tasks]);
-    showToast('Task added');
+    tasksDb.createTaskRow(task)
+      .then(row => { setTasks(prev => [row, ...prev]); showToast('Task added'); })
+      .catch(showError);
   }
   function updateTask(task) {
-    persistTasks(tasks.map(x => x.id === task.id ? { ...x, ...task } : x));
-    setEditTask(null);
-    showToast('Task updated');
+    tasksDb.updateTaskRow(task.id, task)
+      .then(() => { setTasks(prev => prev.map(x => x.id === task.id ? { ...x, ...task } : x)); setEditTask(null); showToast('Task updated'); })
+      .catch(showError);
   }
   function deleteTask(id) {
-    persistTasks(tasks.filter(x => x.id !== id));
-    setEditTask(null);
-    showToast('Task removed');
+    tasksDb.deleteTaskRow(id)
+      .then(() => { setTasks(prev => prev.filter(x => x.id !== id)); setEditTask(null); showToast('Task removed'); })
+      .catch(showError);
   }
   function toggleTaskDone(id) {
-    persistTasks(tasks.map(x => x.id === id ? { ...x, done: !x.done, doneAt: !x.done ? todayStr() : null } : x));
+    const task = tasks.find(x => x.id === id);
+    if (!task) return;
+    const done = !task.done;
+    const doneAt = done ? todayStr() : null;
+    tasksDb.setTaskDone(id, done, doneAt)
+      .then(() => setTasks(prev => prev.map(x => x.id === id ? { ...x, done, doneAt } : x)))
+      .catch(showError);
   }
   function clearCompletedTasks() {
-    const remaining = tasks.filter(t => !t.done);
-    if (remaining.length === tasks.length) return;
-    persistTasks(remaining);
-    showToast('Completed tasks cleared');
+    if (!tasks.some(t => t.done)) return;
+    tasksDb.clearCompletedTaskRows()
+      .then(() => { setTasks(prev => prev.filter(t => !t.done)); showToast('Completed tasks cleared'); })
+      .catch(showError);
   }
   function addCategory(cat) {
-    persistCategories([...categories, { ...cat, id: 'cat' + Date.now() }]);
-    showToast('Category added');
+    tasksDb.createTaskCategory(cat)
+      .then(row => { setCategories(prev => [...prev, row]); showToast('Category added'); })
+      .catch(showError);
   }
   function editCategory(id, updates) {
-    persistCategories(categories.map(c => c.id === id ? { ...c, ...updates } : c));
-    showToast('Category updated');
+    tasksDb.updateTaskCategoryRow(id, updates)
+      .then(() => { setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c)); showToast('Category updated'); })
+      .catch(showError);
   }
   function deleteCategory(id) {
     if (categories.length <= 1) return;
-    persistCategories(categories.filter(c => c.id !== id));
-    persistTasks(tasks.map(t => t.category === id ? { ...t, category: null } : t));
-    if (filterCat === id) setFilterCat('all');
-    showToast('Category removed');
+    tasksDb.deleteTaskCategoryRow(id)
+      .then(() => {
+        setCategories(prev => prev.filter(c => c.id !== id));
+        setTasks(prev => prev.map(t => t.category === id ? { ...t, category: null } : t));
+        if (filterCat === id) setFilterCat('all');
+        showToast('Category removed');
+      })
+      .catch(showError);
   }
 
   function addTransaction(txn) {
-    persistTransactions([{ ...txn, id: 'x' + Date.now() }, ...transactions]);
-    showToast(txn.type === 'income' ? 'Income added' : 'Expense added');
+    financeDb.createTransactionRow(txn)
+      .then(row => { setTransactions(prev => [row, ...prev]); showToast(txn.type === 'income' ? 'Income added' : 'Expense added'); })
+      .catch(showError);
   }
   function updateTransaction(txn) {
-    persistTransactions(transactions.map(x => x.id === txn.id ? { ...x, ...txn } : x));
-    setEditTxn(null);
-    showToast('Transaction updated');
+    financeDb.updateTransactionRow(txn.id, txn)
+      .then(() => { setTransactions(prev => prev.map(x => x.id === txn.id ? { ...x, ...txn } : x)); setEditTxn(null); showToast('Transaction updated'); })
+      .catch(showError);
   }
   function deleteTransaction(id) {
-    persistTransactions(transactions.filter(x => x.id !== id));
-    setEditTxn(null);
-    showToast('Transaction removed');
+    financeDb.deleteTransactionRow(id)
+      .then(() => { setTransactions(prev => prev.filter(x => x.id !== id)); setEditTxn(null); showToast('Transaction removed'); })
+      .catch(showError);
   }
   function addFinanceCategory(cat) {
-    persistFinanceCategories([...financeCategories, { ...cat, id: 'fcat' + Date.now() }]);
-    showToast('Category added');
+    financeDb.createFinanceCategory(cat)
+      .then(row => { setFinanceCategories(prev => [...prev, row]); showToast('Category added'); })
+      .catch(showError);
   }
   function editFinanceCategory(id, updates) {
-    persistFinanceCategories(financeCategories.map(c => c.id === id ? { ...c, ...updates } : c));
-    showToast('Category updated');
+    financeDb.updateFinanceCategoryRow(id, updates)
+      .then(() => { setFinanceCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c)); showToast('Category updated'); })
+      .catch(showError);
   }
   function deleteFinanceCategory(id) {
     if (financeCategories.length <= 1) return;
-    persistFinanceCategories(financeCategories.filter(c => c.id !== id));
-    persistTransactions(transactions.map(t => t.category === id ? { ...t, category: null } : t));
-    if (finFilterCat === id) setFinFilterCat('all');
-    showToast('Category removed');
+    financeDb.deleteFinanceCategoryRow(id)
+      .then(() => {
+        setFinanceCategories(prev => prev.filter(c => c.id !== id));
+        setTransactions(prev => prev.map(t => t.category === id ? { ...t, category: null } : t));
+        if (finFilterCat === id) setFinFilterCat('all');
+        showToast('Category removed');
+      })
+      .catch(showError);
   }
 
   function toggle(habitId, dateStr) {
     if (dateStr > todayStr()) return;
+    const wasDone = !!(logs[dateStr] || {})[habitId];
     const next = { ...logs, [dateStr]: { ...(logs[dateStr] || {}) } };
-    next[dateStr][habitId] = !next[dateStr][habitId];
-    persistLogs(next);
+    next[dateStr][habitId] = !wasDone;
+    setLogs(next); // optimistic — feels instant on every tap
+    habitsDb.setLogDone(habitId, dateStr, !wasDone).catch(e => {
+      setLogs(logs); // roll back on failure
+      showError(e);
+    });
   }
   function isDone(habitId, dateStr) { return !!(logs[dateStr] || {})[habitId]; }
 
-  function addHabit(h) { persistHabits([...habits, { ...h, id: 'h' + Date.now() }]); setShowAdd(false); showToast('Habit added'); }
-  function updateHabit(h) { persistHabits(habits.map(x => x.id === h.id ? h : x)); setEditHabit(null); showToast('Habit updated'); }
-  function deleteHabit(id) { persistHabits(habits.filter(x => x.id !== id)); setEditHabit(null); showToast('Habit removed'); }
+  function addHabit(h) {
+    habitsDb.createHabit(h)
+      .then(row => { setHabits(prev => [...prev, row]); setShowAdd(false); showToast('Habit added'); })
+      .catch(showError);
+  }
+  function updateHabit(h) {
+    habitsDb.updateHabitRow(h.id, h)
+      .then(() => { setHabits(prev => prev.map(x => x.id === h.id ? h : x)); setEditHabit(null); showToast('Habit updated'); })
+      .catch(showError);
+  }
+  function deleteHabit(id) {
+    habitsDb.deleteHabitRow(id)
+      .then(() => { setHabits(prev => prev.filter(x => x.id !== id)); setEditHabit(null); showToast('Habit removed'); })
+      .catch(showError);
+  }
 
   const weeks = useMemo(() => buildWeeks(cursor.y, cursor.m), [cursor]);
   const allDatesInMonth = useMemo(() => weeks.flat().filter(Boolean), [weeks]);
@@ -340,6 +370,10 @@ export default function HabitSheet() {
                 </div>
               </>
             )}
+            <button className="hs-btn" onClick={() => signOut()} title="Sign out"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: `1px solid ${C.line}`, borderRadius: 10, padding: '8px 12px', fontSize: 12, fontWeight: 600, color: C.sub }}>
+              <LogOut size={13} /> Sign out
+            </button>
           </div>
         </div>
 

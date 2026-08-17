@@ -1,8 +1,10 @@
-import { Check, Pencil } from 'lucide-react';
+import { Check, Pencil, CalendarPlus, CalendarCheck } from 'lucide-react';
 import { C } from '../../theme.js';
+import { todayStr } from '../../lib/dateHelpers.js';
 import { PRIORITY, catById, dueLabel, toneColor } from './taskHelpers.js';
 
-export default function TaskSection({ title, tint, tasks, today, categories, onToggle, onEdit, dim, emptyText, icon, actions }) {
+export default function TaskSection({ title, tint, tasks, today, categories, onToggle, onEdit, dim, emptyText, icon, actions, onPlanToday }) {
+  const todayDate = today || todayStr();
   if (!tasks.length && !emptyText) return null;
   return (
     <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, marginBottom: 16 }}>
@@ -17,13 +19,14 @@ export default function TaskSection({ title, tint, tasks, today, categories, onT
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {tasks.map(t => {
-            const overdue = !t.done && t.due && t.due < today;
+            const overdue = !t.done && t.due && t.due < todayDate;
             const p = PRIORITY[t.priority] || PRIORITY.med;
             const cat = catById(categories, t.category);
-            const due = dueLabel(t.due, today, t.done);
+            const due = dueLabel(t.due, todayDate, t.done);
+            const isPlannedToday = t.plannedDate === todayDate;
             return (
               <div key={t.id} className="hs-row" style={{
-                position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 40px 11px 12px',
+                position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px 11px 12px',
                 borderRadius: 8, background: overdue ? 'rgba(226,112,90,0.10)' : 'rgba(255,255,255,0.035)',
                 borderLeft: `4px solid ${cat.color}`, opacity: dim ? 0.6 : 1,
               }}>
@@ -52,7 +55,36 @@ export default function TaskSection({ title, tint, tasks, today, categories, onT
                     <span style={{ color: toneColor(due.tone), fontWeight: due.tone === 'bad' || due.tone === 'warn' ? 700 : 400 }}>{due.text}</span>
                   </div>
                 </div>
-                <button onClick={() => onEdit(t)} style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', color: C.sub, cursor: 'pointer', display: 'flex' }}><Pencil size={12} /></button>
+
+                {/* Right-side action buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginTop: 1 }}>
+                  {/* Plan-for-today button — only shown when the prop is provided */}
+                  {onPlanToday && !t.done && (
+                    isPlannedToday ? (
+                      <span title="Planned for today" style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 24, height: 24, borderRadius: 6,
+                        background: 'rgba(180,112,15,0.18)', color: C.tealDark,
+                      }}>
+                        <CalendarCheck size={13} />
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => onPlanToday(t.id)}
+                        title="Plan for today"
+                        className="hs-btn"
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          width: 24, height: 24, borderRadius: 6, border: `1px solid ${C.line}`,
+                          background: 'transparent', color: C.sub, cursor: 'pointer',
+                        }}
+                      >
+                        <CalendarPlus size={13} />
+                      </button>
+                    )
+                  )}
+                  <button onClick={() => onEdit(t)} style={{ background: 'none', border: 'none', color: C.sub, cursor: 'pointer', display: 'flex' }}><Pencil size={12} /></button>
+                </div>
               </div>
             );
           })}

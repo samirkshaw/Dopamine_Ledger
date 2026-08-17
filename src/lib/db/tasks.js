@@ -42,7 +42,8 @@ export async function seedDefaultTaskCategories(defaults) {
 function fromRow(t) {
   return {
     id: t.id, title: t.title, due: t.due_date, priority: t.priority,
-    category: t.category_id, notes: t.notes, done: t.done, doneAt: t.done_at, createdAt: t.created_at,
+    category: t.category_id, notes: t.notes, done: t.done, doneAt: t.done_at,
+    plannedDate: t.planned_date, createdAt: t.created_at,
   };
 }
 
@@ -57,6 +58,7 @@ export async function createTaskRow(task) {
   const { data, error } = await supabase.from('tasks').insert({
     user_id, title: task.title, due_date: task.due || null, priority: task.priority,
     category_id: task.category || null, notes: task.notes || null,
+    planned_date: task.plannedDate || null,
   }).select().single();
   if (error) throw error;
   return fromRow(data);
@@ -72,6 +74,11 @@ export async function updateTaskRow(id, task) {
 
 export async function setTaskDone(id, done, doneAt) {
   const { error } = await supabase.from('tasks').update({ done, done_at: doneAt }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function setPlannedDate(id, dateStrOrNull) {
+  const { error } = await supabase.from('tasks').update({ planned_date: dateStrOrNull }).eq('id', id);
   if (error) throw error;
 }
 

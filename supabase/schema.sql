@@ -11,7 +11,8 @@ create table habits (
   name text not null,
   icon text not null default '🎯',
   sort_order int not null default 0,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  unique (user_id, name)  -- migration 001
 );
 
 create table habit_logs (
@@ -29,7 +30,8 @@ create table task_categories (
   user_id uuid references auth.users not null,
   name text not null,
   color text not null,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  unique (user_id, name)  -- migration 001
 );
 
 create table tasks (
@@ -39,6 +41,7 @@ create table tasks (
   title text not null,
   priority text not null default 'med' check (priority in ('low','med','high')),
   due_date date,
+  planned_date date,           -- migration 002: the day I plan to work on this
   notes text,
   done boolean not null default false,
   done_at date,
@@ -52,7 +55,8 @@ create table finance_categories (
   name text not null,
   color text not null,
   kind text not null check (kind in ('income','expense')),
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  unique (user_id, name)  -- migration 001
 );
 
 create table transactions (
@@ -92,6 +96,7 @@ end $$;
 -- ---------- Indexes ----------
 create index habit_logs_user_date_idx on habit_logs (user_id, log_date);
 create index tasks_user_done_idx on tasks (user_id, done);
+create index tasks_user_planned_idx on tasks (user_id, planned_date);  -- migration 002
 create index transactions_user_date_idx on transactions (user_id, txn_date);
 
 -- No anonymous auth needed here — this version uses real email/password

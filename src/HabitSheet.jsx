@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut } from 'lucide-react';
+import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut, Sun } from 'lucide-react';
 
 import { toDateStr, todayStr, addDaysStr, monthLabel, buildWeeks, DOW } from './lib/dateHelpers.js';
 import { C, WEEK_COLORS, FONT_IMPORT, DEFAULT_HABITS, DEFAULT_CATEGORIES, DEFAULT_FINANCE_CATEGORIES } from './theme.js';
@@ -15,6 +15,7 @@ import HabitModal from './components/habits/HabitModal.jsx';
 import TaskTrackerView from './components/tasks/TaskTrackerView.jsx';
 import TaskModal from './components/tasks/TaskModal.jsx';
 import CategoryPanel from './components/tasks/CategoryPanel.jsx';
+import TodayView from './components/todo/TodayView.jsx';
 import FinanceTrackerView from './components/finance/FinanceTrackerView.jsx';
 import TransactionModal from './components/finance/TransactionModal.jsx';
 import FinanceCategoryPanel from './components/finance/FinanceCategoryPanel.jsx';
@@ -27,7 +28,7 @@ export default function HabitSheet() {
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [financeCategories, setFinanceCategories] = useState([]);
-  const [page, setPage] = useState('habits'); // 'habits' | 'tasks' | 'finance'
+  const [page, setPage] = useState('habits'); // 'habits' | 'tasks' | 'today' | 'finance'
   const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [showAdd, setShowAdd] = useState(false);
   const [editHabit, setEditHabit] = useState(null);
@@ -94,6 +95,11 @@ export default function HabitSheet() {
     const doneAt = done ? todayStr() : null;
     tasksDb.setTaskDone(id, done, doneAt)
       .then(() => setTasks(prev => prev.map(x => x.id === id ? { ...x, done, doneAt } : x)))
+      .catch(showError);
+  }
+  function setTaskPlannedDate(id, date) {
+    tasksDb.setPlannedDate(id, date)
+      .then(() => setTasks(prev => prev.map(t => t.id === id ? { ...t, plannedDate: date } : t)))
       .catch(showError);
   }
   function clearCompletedTasks() {
@@ -326,12 +332,14 @@ export default function HabitSheet() {
         {/* Header */}
         <div className="hs-header" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14, marginBottom: 22 }}>
           <div className="hs-header-left">
-            <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 22 }}>{page === 'habits' ? 'Habit Tracker' : page === 'tasks' ? 'Task Tracker' : 'Finance Tracker'}</div>
+            <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 22 }}>{page === 'habits' ? 'Habit Tracker' : page === 'tasks' ? 'Task Tracker' : page === 'today' ? 'Today' : 'Finance Tracker'}</div>
             <div style={{ fontSize: 12.5, color: C.sub, marginTop: 2 }}>
               {page === 'habits'
                 ? `${habits.length} habits · ${daysInMonth} days this month`
                 : page === 'tasks'
                 ? `${tasks.filter(t => !t.done).length} pending · ${tasks.filter(t => t.done).length} done`
+                : page === 'today'
+                ? `${tasks.filter(t => t.plannedDate === todayStr()).length} planned · ${tasks.filter(t => t.plannedDate === todayStr() && t.done).length} done`
                 : `${transactions.length} transactions logged`}
             </div>
           </div>
@@ -340,6 +348,7 @@ export default function HabitSheet() {
             {[
               { key: 'habits', label: 'Habits', icon: <Flame size={14} /> },
               { key: 'tasks', label: 'Tasks', icon: <ListChecks size={14} /> },
+              { key: 'today', label: 'Today', icon: <Sun size={14} /> },
               { key: 'finance', label: 'Finance', icon: <Wallet size={14} /> },
             ].map(t => {
               const active = page === t.key;
@@ -592,6 +601,17 @@ export default function HabitSheet() {
             onEdit={(t) => setEditTask(t)}
             onManageCats={() => setShowCatPanel(true)}
             onClearCompleted={clearCompletedTasks}
+            onPlanToday={setTaskPlannedDate}
+          />
+        )}
+
+        {page === 'today' && (
+          <TodayView
+            tasks={tasks}
+            categories={categories}
+            onToggle={toggleTaskDone}
+            onAddTask={addTask}
+            onSetPlannedDate={setTaskPlannedDate}
           />
         )}
 

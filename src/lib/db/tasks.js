@@ -43,7 +43,7 @@ function fromRow(t) {
   return {
     id: t.id, title: t.title, due: t.due_date, priority: t.priority,
     category: t.category_id, notes: t.notes, done: t.done, doneAt: t.done_at,
-    plannedDate: t.planned_date, createdAt: t.created_at,
+    plannedDate: t.planned_date, source: t.source, createdAt: t.created_at,
   };
 }
 
@@ -59,6 +59,7 @@ export async function createTaskRow(task) {
     user_id, title: task.title, due_date: task.due || null, priority: task.priority,
     category_id: task.category || null, notes: task.notes || null,
     planned_date: task.plannedDate || null,
+    source: task.source || 'task',
   }).select().single();
   if (error) throw error;
   return fromRow(data);

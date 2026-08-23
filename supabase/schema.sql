@@ -42,6 +42,7 @@ create table tasks (
   priority text not null default 'med' check (priority in ('low','med','high')),
   due_date date,
   planned_date date,           -- migration 002: the day I plan to work on this
+  source text not null default 'task' check (source in ('task','quick')),  -- migration 003: 'task' = backlog, 'quick' = today quick-add
   notes text,
   done boolean not null default false,
   done_at date,

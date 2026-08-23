@@ -8,7 +8,8 @@ import StatCard from '../common/StatCard.jsx';
 import TaskSection from './TaskSection.jsx';
 import InlineAddTask from './InlineAddTask.jsx';
 
-export default function TaskTrackerView({ tasks, categories, filterCat, setFilterCat, taskSort, setTaskSort, onToggle, onAddTask, onEdit, onManageCats, onClearCompleted }) {
+export default function TaskTrackerView({ tasks: allTasks, categories, filterCat, setFilterCat, taskSort, setTaskSort, onToggle, onAddTask, onEdit, onManageCats, onClearCompleted, onPlanToday }) {
+  const tasks = useMemo(() => allTasks.filter(t => (t.source || 'task') === 'task'), [allTasks]);
   const today = todayStr();
   const [query, setQuery] = useState('');
   const [priFilter, setPriFilter] = useState('all');
@@ -185,19 +186,19 @@ export default function TaskTrackerView({ tasks, categories, filterCat, setFilte
       ) : (
         <>
           {overdue.length > 0 && (
-            <TaskSection title="Overdue" tint="#E2705A" icon={<CalendarClock size={13} color="#E2705A" />} tasks={overdue} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} />
+            <TaskSection title="Overdue" tint="#E2705A" icon={<CalendarClock size={13} color="#E2705A" />} tasks={overdue} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} onPlanToday={onPlanToday ? (id) => onPlanToday(id, today) : undefined} />
           )}
           {dueToday.length > 0 && (
-            <TaskSection title="Due Today" tint={C.warn} tasks={dueToday} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} />
+            <TaskSection title="Due Today" tint={C.warn} tasks={dueToday} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} onPlanToday={onPlanToday ? (id) => onPlanToday(id, today) : undefined} />
           )}
           {thisWeek.length > 0 && (
-            <TaskSection title="This Week" tint={C.tealDark} tasks={thisWeek} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} />
+            <TaskSection title="This Week" tint={C.tealDark} tasks={thisWeek} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} onPlanToday={onPlanToday ? (id) => onPlanToday(id, today) : undefined} />
           )}
           {upcoming.length > 0 && (
-            <TaskSection title="Upcoming" tint="#7FA8DE" tasks={upcoming} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} />
+            <TaskSection title="Upcoming" tint="#7FA8DE" tasks={upcoming} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} onPlanToday={onPlanToday ? (id) => onPlanToday(id, today) : undefined} />
           )}
           {noDate.length > 0 && (
-            <TaskSection title="No Due Date" tint={C.sub} tasks={noDate} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} />
+            <TaskSection title="No Due Date" tint={C.sub} tasks={noDate} today={today} categories={categories} onToggle={onToggle} onEdit={onEdit} onPlanToday={onPlanToday ? (id) => onPlanToday(id, today) : undefined} />
           )}
           {pendingTotal === 0 && (
             <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: '20px 16px', textAlign: 'center', color: C.sub, fontSize: 12.5, marginBottom: 16 }}>

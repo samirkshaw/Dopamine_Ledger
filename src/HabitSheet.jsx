@@ -337,7 +337,7 @@ export default function HabitSheet() {
               {page === 'habits'
                 ? `${habits.length} habits · ${daysInMonth} days this month`
                 : page === 'tasks'
-                ? `${tasks.filter(t => !t.done).length} pending · ${tasks.filter(t => t.done).length} done`
+                ? `${tasks.filter(t => t.source !== 'quick' && !t.done).length} pending · ${tasks.filter(t => t.source !== 'quick' && t.done).length} done`
                 : page === 'today'
                 ? `${tasks.filter(t => t.plannedDate === todayStr()).length} planned · ${tasks.filter(t => t.plannedDate === todayStr() && t.done).length} done`
                 : `${transactions.length} transactions logged`}
@@ -612,6 +612,7 @@ export default function HabitSheet() {
             onToggle={toggleTaskDone}
             onAddTask={addTask}
             onSetPlannedDate={setTaskPlannedDate}
+            onDeleteTask={deleteTask}
           />
         )}
 

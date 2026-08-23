@@ -5,7 +5,7 @@ import { todayStr } from '../../lib/dateHelpers.js';
 import { priRank, catById, PRIORITY } from '../tasks/taskHelpers.js';
 import StatCard from '../common/StatCard.jsx';
 
-export default function TodayView({ tasks, categories, onToggle, onAddTask, onSetPlannedDate }) {
+export default function TodayView({ tasks, categories, onToggle, onAddTask, onSetPlannedDate, onDeleteTask }) {
   const today = todayStr();
   const [quickTitle, setQuickTitle] = useState('');
 
@@ -39,8 +39,17 @@ export default function TodayView({ tasks, categories, onToggle, onAddTask, onSe
   function submitQuick() {
     const title = quickTitle.trim();
     if (!title) return;
-    onAddTask({ title, plannedDate: today, priority: 'med', category: null, due: null, notes: null });
+    onAddTask({ title, plannedDate: today, priority: 'med', category: null, due: null, notes: null, source: 'quick' });
     setQuickTitle('');
+  }
+
+  // Remove-from-today: quick items get deleted, real tasks just unplan
+  function removeFromToday(task) {
+    if (task.source === 'quick') {
+      onDeleteTask(task.id);
+    } else {
+      onSetPlannedDate(task.id, null);
+    }
   }
 
   // ── Stale bulk actions ────────────────────────────────────────────────────────
@@ -49,7 +58,7 @@ export default function TodayView({ tasks, categories, onToggle, onAddTask, onSe
     staleTasks.forEach(t => onSetPlannedDate(t.id, today));
   }
   function dropAll() {
-    staleTasks.forEach(t => onSetPlannedDate(t.id, null));
+    staleTasks.forEach(t => removeFromToday(t));
   }
 
   // ── Shared row styles ─────────────────────────────────────────────────────────
@@ -113,7 +122,7 @@ export default function TodayView({ tasks, categories, onToggle, onAddTask, onSe
                     <button onClick={() => onSetPlannedDate(t.id, today)} className="hs-btn" style={iconBtnStyle(true)}>
                       <ChevronsRight size={11} /> Carry
                     </button>
-                    <button onClick={() => onSetPlannedDate(t.id, null)} className="hs-btn" style={{ ...iconBtnStyle(false), borderColor: 'rgba(232,132,111,0.4)', color: C.bad }}>
+                    <button onClick={() => removeFromToday(t)} className="hs-btn" style={{ ...iconBtnStyle(false), borderColor: 'rgba(232,132,111,0.4)', color: C.bad }}>
                       <X size={11} /> Drop
                     </button>
                   </div>
@@ -207,7 +216,7 @@ export default function TodayView({ tasks, categories, onToggle, onAddTask, onSe
 
                   {/* Remove from today */}
                   <button
-                    onClick={() => onSetPlannedDate(t.id, null)}
+                    onClick={() => removeFromToday(t)}
                     title="Remove from today"
                     className="hs-btn"
                     style={{

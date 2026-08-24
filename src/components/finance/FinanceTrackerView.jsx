@@ -71,7 +71,7 @@ export default function FinanceTrackerView({ transactions, categories, filterCat
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10, marginBottom: 18 }}>
+      <div className="hs-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10, marginBottom: 18 }}>
         <MoneyStatCard
           label="Balance"
           value={fmtMoney(stats.balance)}
@@ -100,12 +100,12 @@ export default function FinanceTrackerView({ transactions, categories, filterCat
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: C.bad, display: 'inline-block' }} />Expenses</span>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 140 }}>
+        <div className="hs-finance-chart-bars" style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 140 }}>
           {monthlyBars.map((b, i) => (
             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: '100%' }}>
-                <div title={fmtMoney(b.inc)} style={{ width: 16, height: `${Math.max(2, (b.inc / maxBar) * 100)}%`, background: C.tealDark, borderRadius: '4px 4px 0 0' }} />
-                <div title={fmtMoney(b.exp)} style={{ width: 16, height: `${Math.max(2, (b.exp / maxBar) * 100)}%`, background: C.bad, borderRadius: '4px 4px 0 0' }} />
+                <div title={fmtMoney(b.inc)} className="hs-finance-chart-bar" style={{ width: 16, height: `${Math.max(2, (b.inc / maxBar) * 100)}%`, background: C.tealDark, borderRadius: '4px 4px 0 0' }} />
+                <div title={fmtMoney(b.exp)} className="hs-finance-chart-bar" style={{ width: 16, height: `${Math.max(2, (b.exp / maxBar) * 100)}%`, background: C.bad, borderRadius: '4px 4px 0 0' }} />
               </div>
               <div style={{ fontSize: 10.5, color: C.sub, fontWeight: 600, marginTop: 6 }}>{b.label}</div>
             </div>
@@ -120,9 +120,9 @@ export default function FinanceTrackerView({ transactions, categories, filterCat
           <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 12 }}>Expense breakdown for this month</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {expenseBreakdown.map((e, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 110, fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: e.cat.color, fontWeight: 600 }}>{e.cat.name}</div>
-                <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.10)', overflow: 'hidden' }}>
+              <div key={i} className="hs-cat-breakdown-row" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="hs-cat-breakdown-name" style={{ width: 110, fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: e.cat.color, fontWeight: 600 }}>{e.cat.name}</div>
+                <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.10)', overflow: 'hidden', minWidth: 60 }}>
                   <div style={{ width: `${e.pct}%`, height: '100%', background: e.cat.color }} />
                 </div>
                 <div style={{ width: 90, textAlign: 'right', fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5, color: C.sub }}>{fmtMoney(e.amt)}</div>
@@ -134,7 +134,7 @@ export default function FinanceTrackerView({ transactions, categories, filterCat
       )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <div className="hs-filter-ribbon" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           <button onClick={() => setTypeFilter('all')} className="hs-btn" style={{
             fontFamily: "'JetBrains Mono',monospace", fontSize: 11, padding: '6px 12px', borderRadius: 20,
             border: `1.4px solid ${typeFilter === 'all' ? C.chip : C.line}`,

@@ -22,12 +22,12 @@ export default function TrendChart({ allDatesInMonth, dayCompletedCount, habitsC
   const avgPct = Math.round(points.filter(p => !p.isFuture).reduce((s, p) => s + p.pct, 0) / Math.max(1, points.filter(p => !p.isFuture).length));
 
   return (
-    <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, marginBottom: 22 }}>
+    <div className="hs-trend-chart-card" style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, marginBottom: 22, overflow: 'hidden' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
         <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 600, fontSize: 15 }}>Monthly Trend</div>
         <div style={{ fontSize: 11.5, color: C.sub }}>Avg completion: <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: C.ink }}>{avgPct}%</span></div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" style={{ display: 'block', overflow: 'visible' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" className="hs-trend-chart-svg" style={{ display: 'block', overflow: 'hidden' }}>
         <defs>
           <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={C.tealDark} stopOpacity="0.28" />

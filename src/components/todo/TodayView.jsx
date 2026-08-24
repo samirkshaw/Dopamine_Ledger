@@ -82,7 +82,7 @@ export default function TodayView({ tasks, categories, onToggle, onAddTask, onSe
   return (
     <div>
       {/* ── Stats row ─────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 10, marginBottom: 18 }}>
+      <div className="hs-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 10, marginBottom: 18 }}>
         <StatCard label="Planned today" value={plannedCount} pct={100} flat />
         <StatCard label="Done today" value={doneCount} pct={100} flat />
         <StatCard label="Completion" value={`${completionPct}%`} pct={completionPct} />
@@ -140,12 +140,13 @@ export default function TodayView({ tasks, categories, onToggle, onAddTask, onSe
           onChange={e => setQuickTitle(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') submitQuick(); }}
           placeholder="Quick-add to today…"
+          className="hs-touch-target"
           style={{
             flex: 1, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`,
             borderRadius: 10, padding: '10px 12px', color: C.ink, fontSize: 13, outline: 'none',
           }}
         />
-        <button onClick={submitQuick} className="hs-btn" style={{
+        <button onClick={submitQuick} className="hs-btn hs-touch-target" style={{
           display: 'flex', alignItems: 'center', gap: 5, background: C.teal, border: 'none',
           borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 600, color: '#2B1B04', whiteSpace: 'nowrap',
         }}>

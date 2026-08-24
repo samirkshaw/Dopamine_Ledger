@@ -69,7 +69,7 @@ export default function TaskTrackerView({ tasks: allTasks, categories, filterCat
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 10, marginBottom: 18 }}>
+      <div className="hs-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 10, marginBottom: 18 }}>
         <StatCard label="Pending" value={pendingTotal} pct={100} flat />
         <StatCard label="Overdue" value={overdue.length} pct={100} flat />
         <StatCard label="Due this week" value={dueToday.length + thisWeek.length} pct={100} flat />
@@ -112,9 +112,9 @@ export default function TaskTrackerView({ tasks: allTasks, categories, filterCat
           <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 12 }}>Completion progress across your categories</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {categoryStats.map(c => (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 140, fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: c.color, fontWeight: 600 }}>{c.name}</div>
-                <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.10)', overflow: 'hidden' }}>
+              <div key={c.id} className="hs-cat-breakdown-row" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="hs-cat-breakdown-name" style={{ width: 140, fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: c.color, fontWeight: 600 }}>{c.name}</div>
+                <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.10)', overflow: 'hidden', minWidth: 60 }}>
                   <div style={{ width: `${c.pct}%`, height: '100%', background: c.color }} />
                 </div>
                 <div style={{ width: 60, textAlign: 'right', fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5, color: C.sub }}>{c.done}/{c.total}</div>
@@ -126,7 +126,7 @@ export default function TaskTrackerView({ tasks: allTasks, categories, filterCat
       )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+        <div className="hs-filter-ribbon" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -163,8 +163,8 @@ export default function TaskTrackerView({ tasks: allTasks, categories, filterCat
         </select>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginBottom: 16, marginTop: -6 }}>
-        <span style={{ fontSize: 10.5, color: C.sub, fontWeight: 600, marginRight: 2 }}>Priority:</span>
+      <div className="hs-filter-ribbon" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginBottom: 16, marginTop: -6 }}>
+        <span style={{ fontSize: 10.5, color: C.sub, fontWeight: 600, marginRight: 2, flexShrink: 0 }}>Priority:</span>
         <button onClick={() => setPriFilter('all')} className="hs-btn" style={{
           fontFamily: "'JetBrains Mono',monospace", fontSize: 11, padding: '5px 11px', borderRadius: 20,
           border: `1.4px solid ${priFilter === 'all' ? C.chip : C.line}`,

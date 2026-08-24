@@ -4,6 +4,7 @@ import HabitSheet from './HabitSheet.jsx';
 import Login from './components/auth/Login.jsx';
 import { getSession, onAuthChange } from './lib/auth.js';
 import { C } from './theme.js';
+import './responsive.css';
 
 function App() {
   const [session, setSession] = useState(undefined); // undefined = still checking

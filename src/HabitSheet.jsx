@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, forwardRef } from 'react';
 import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut, Sun, GripVertical } from 'lucide-react';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -34,7 +34,7 @@ function SortableHabitRow({ habit, hitsThisMonth, goalPerHabit, weeks, today, is
   const h = habit;
   return (
     <div ref={setNodeRef} style={style} className="hs-row">
-      <div style={{ width: 220, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 6px 7px 0' }}>
+      <div className="hs-grid-sticky-col" style={{ width: 220, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 6px 7px 4px', background: '#15111E' }}>
         <button {...attributes} {...listeners} style={{ background: 'none', border: 'none', color: C.sub, cursor: 'grab', padding: '0 2px', flexShrink: 0, display: 'flex', alignItems: 'center', touchAction: 'none' }}>
           <GripVertical size={13} />
         </button>
@@ -259,7 +259,10 @@ export default function HabitSheet() {
     });
   }
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+  );
   function handleDragEnd(event) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -367,7 +370,7 @@ export default function HabitSheet() {
   }
 
   return (
-    <div style={{ position: 'relative', fontFamily: "'Inter',sans-serif", background: C.bg, color: C.ink, minHeight: 700, padding: '20px 16px 40px', overflow: 'hidden', isolation: 'isolate' }}>
+    <div className="hs-page-root" style={{ position: 'relative', fontFamily: "'Inter',sans-serif", background: C.bg, color: C.ink, minHeight: 700, padding: '20px 16px 40px', overflow: 'hidden', isolation: 'isolate' }}>
       <style>{FONT_IMPORT}</style>
       <style>{`
         * { box-sizing: border-box; }
@@ -388,12 +391,6 @@ export default function HabitSheet() {
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{transform:translateY(14px);opacity:0} to{transform:translateY(0);opacity:1} }
         @keyframes hsDrift { 0%,100%{ transform: translate(0,0) rotate(0deg); } 50%{ transform: translate(-14px,18px) rotate(6deg); } }
-        @media (max-width: 760px) {
-          .hs-header { grid-template-columns: 1fr; justify-items: center; text-align: center; }
-          .hs-header-left { order: 1; }
-          .hs-header-center { order: 2; }
-          .hs-header-right { order: 3; justify-content: center !important; }
-        }
       `}</style>
 
       {/* Decorative dark canvas: soft gold + violet glows and a faint
@@ -422,15 +419,17 @@ export default function HabitSheet() {
         {/* Header */}
         <div className="hs-header" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14, marginBottom: 22 }}>
           <div className="hs-header-left">
-            <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 22 }}>{page === 'habits' ? 'Habit Tracker' : page === 'tasks' ? 'Task Tracker' : page === 'today' ? 'Today' : 'Finance Tracker'}</div>
-            <div style={{ fontSize: 12.5, color: C.sub, marginTop: 2 }}>
-              {page === 'habits'
-                ? `${habits.length} habits · ${daysInMonth} days this month`
-                : page === 'tasks'
-                ? `${tasks.filter(t => t.source !== 'quick' && !t.done).length} pending · ${tasks.filter(t => t.source !== 'quick' && t.done).length} done`
-                : page === 'today'
-                ? `${tasks.filter(t => t.plannedDate === todayStr()).length} planned · ${tasks.filter(t => t.plannedDate === todayStr() && t.done).length} done`
-                : `${transactions.length} transactions logged`}
+            <div>
+              <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 22 }}>{page === 'habits' ? 'Habit Tracker' : page === 'tasks' ? 'Task Tracker' : page === 'today' ? 'Today' : 'Finance Tracker'}</div>
+              <div style={{ fontSize: 12.5, color: C.sub, marginTop: 2 }}>
+                {page === 'habits'
+                  ? `${habits.length} habits · ${daysInMonth} days this month`
+                  : page === 'tasks'
+                  ? `${tasks.filter(t => t.source !== 'quick' && !t.done).length} pending · ${tasks.filter(t => t.source !== 'quick' && t.done).length} done`
+                  : page === 'today'
+                  ? `${tasks.filter(t => t.plannedDate === todayStr()).length} planned · ${tasks.filter(t => t.plannedDate === todayStr() && t.done).length} done`
+                  : `${transactions.length} transactions logged`}
+              </div>
             </div>
           </div>
 
@@ -443,14 +442,14 @@ export default function HabitSheet() {
             ].map(t => {
               const active = page === t.key;
               return (
-                <button key={t.key} className="hs-btn" onClick={() => setPage(t.key)} style={{
+                <button key={t.key} className="hs-btn hs-nav-btn" onClick={() => setPage(t.key)} style={{
                   display: 'flex', alignItems: 'center', gap: 6, border: 'none', borderRadius: 999,
                   padding: '8px 16px', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap',
                   background: active ? 'linear-gradient(135deg, #E8C170, #B4700F)' : 'transparent',
                   color: active ? '#221806' : C.sub,
                   boxShadow: active ? '0 4px 18px rgba(232,193,112,0.32)' : 'none',
                   transition: 'background .2s ease, color .2s ease, box-shadow .2s ease',
-                }}>{t.icon}{t.label}</button>
+                }}>{t.icon}<span>{t.label}</span></button>
               );
             })}
           </div>
@@ -460,7 +459,7 @@ export default function HabitSheet() {
               <>
                 <button className="hs-btn" onClick={() => { const d = new Date(); setCursor({ y: d.getFullYear(), m: d.getMonth() }); }}
                   style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 10, padding: '8px 12px', fontSize: 12, fontWeight: 600, color: C.gold }}>Today</button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12, padding: '6px 8px' }}>
+                <div className="hs-month-picker" style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12, padding: '6px 8px' }}>
                   <button className="hs-btn" onClick={() => setCursor(c => { const m = c.m - 1; return m < 0 ? { y: c.y - 1, m: 11 } : { y: c.y, m }; })}
                     style={{ background: 'none', border: 'none', display: 'flex', padding: 6, color: C.ink }}><ChevronLeft size={16} /></button>
                   <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 600, fontSize: 14, minWidth: 140, textAlign: 'center' }}>{monthLabel(cursor.y, cursor.m)}</div>
@@ -479,8 +478,8 @@ export default function HabitSheet() {
         {page === 'habits' && (
         <>
         {/* Top: donut + quick check-in + progress cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(180px,230px) 1fr', gap: 14, marginBottom: 22 }}>
-          <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <div className="hs-habits-top-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px,230px) 1fr', gap: 14, marginBottom: 22 }}>
+          <div className="hs-habits-donut-box" style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <div style={{ fontSize: 11.5, color: C.sub, fontWeight: 600, alignSelf: 'flex-start' }}>🚀 Today's Progress</div>
             <Donut value={todayCompleted} max={todayGoal} pct={todayPct} />
           </div>
@@ -508,7 +507,7 @@ export default function HabitSheet() {
                 })}
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="hs-stat-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <StatCard label="Weekly Progress" value={`${weekDone}/${weekGoal}`} pct={weekPct} />
               <StatCard label="Month's Progress" value={`${monthCompleted}/${monthGoal}`} pct={monthPct} />
             </div>
@@ -519,7 +518,7 @@ export default function HabitSheet() {
         <TrendChart allDatesInMonth={allDatesInMonth} dayCompletedCount={dayCompletedCount} habitsCount={weightSum} today={today} />
 
         {/* Main grid */}
-        <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 14, marginBottom: 22, overflowX: 'auto' }}>
+        <div className="hs-grid-scroll-wrap" style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 14, marginBottom: 22, overflowX: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 600, fontSize: 15 }}>Habits for {monthLabel(cursor.y, cursor.m)}</div>
             <button onClick={() => setShowAdd(true)} className="hs-btn" style={{
@@ -531,7 +530,7 @@ export default function HabitSheet() {
           <div style={{ minWidth: 640 + weeks.length * 210 }}>
             {/* Week header row */}
             <div style={{ display: 'flex' }}>
-              <div style={{ width: 220, flexShrink: 0 }} />
+              <div className="hs-grid-sticky-header" style={{ width: 220, flexShrink: 0, background: '#15111E' }} />
               <div style={{ width: 50, flexShrink: 0 }} />
               {weeks.map((w, wi) => {
                 const col = WEEK_COLORS[wi % WEEK_COLORS.length];
@@ -574,7 +573,7 @@ export default function HabitSheet() {
 
             {/* Totals row */}
             <div style={{ display: 'flex', alignItems: 'center', borderTop: `2px solid ${C.ink}22`, marginTop: 4 }}>
-              <div style={{ width: 220, flexShrink: 0, padding: '8px 6px', fontSize: 11.5, fontWeight: 700 }}>Daily total</div>
+              <div className="hs-grid-sticky-col" style={{ width: 220, flexShrink: 0, padding: '8px 6px', fontSize: 11.5, fontWeight: 700, background: '#15111E' }}>Daily total</div>
               <div style={{ width: 50, flexShrink: 0 }} />
               {weeks.map((w, wi) => (
                 <div key={wi} style={{ display: 'flex', width: 210, flexShrink: 0 }}>
@@ -587,7 +586,7 @@ export default function HabitSheet() {
               ))}
             </div>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: 220, flexShrink: 0, padding: '2px 6px 10px', fontSize: 10.5, color: C.sub }}>Week %</div>
+              <div className="hs-grid-sticky-col" style={{ width: 220, flexShrink: 0, padding: '2px 6px 10px', fontSize: 10.5, color: C.sub, background: '#15111E' }}>Week %</div>
               <div style={{ width: 50, flexShrink: 0 }} />
               {weeks.map((w, wi) => (
                 <div key={wi} style={{ width: 210, flexShrink: 0, textAlign: 'center', fontSize: 10.5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: weekTotals[wi].pct >= 50 ? C.tealDark : C.bad, paddingBottom: 8 }}>
@@ -601,7 +600,7 @@ export default function HabitSheet() {
         {/* Weekly bar chart */}
         <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, marginBottom: 22 }}>
           <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 600, fontSize: 15, marginBottom: 14 }}>Weekly Completion</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 130 }}>
+          <div className="hs-weekly-bar-gap" style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 130 }}>
             {weekTotals.map((w, wi) => (
               <div key={wi} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
                 <div style={{ fontSize: 10.5, fontFamily: "'JetBrains Mono',monospace", color: C.sub }}>{w.pct}%</div>
@@ -627,7 +626,7 @@ export default function HabitSheet() {
             {habitPerformance.map((h, i) => (
               <div key={h.id} style={{ display: 'flex', alignItems: 'center', padding: '9px 2px', borderBottom: `1px solid ${C.line}` }}>
                 <div style={{ width: 22, fontSize: 10.5, color: C.sub }}>{i + 1}</div>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                <div className="hs-perf-habit-col" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
                   <span style={{ fontSize: 14 }}>{h.icon}</span>
                   <span style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</span>
                 </div>

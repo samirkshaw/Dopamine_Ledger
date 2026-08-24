@@ -15,7 +15,7 @@ export default function CategoryPanel({ categories, onClose, onAdd, onEdit, onDe
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(6,5,10,0.68)', zIndex: 100, animation: 'fadeIn .15s ease' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{
+      <div className="hs-drawer-card" onClick={e => e.stopPropagation()} style={{
         position: 'fixed', top: 0, right: 0, height: '100%', width: 320, maxWidth: '88vw',
         background: '#18141F', borderLeft: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column',
         fontFamily: "'Inter',sans-serif", color: C.ink, animation: 'slideIn .2s ease',

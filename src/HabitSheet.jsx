@@ -1,5 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut, Sun } from 'lucide-react';
+import { useState, useEffect, useMemo, forwardRef } from 'react';
+import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut, Sun, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 import { toDateStr, todayStr, addDaysStr, monthLabel, buildWeeks, DOW } from './lib/dateHelpers.js';
 import { C, WEEK_COLORS, FONT_IMPORT, DEFAULT_HABITS, DEFAULT_CATEGORIES, DEFAULT_FINANCE_CATEGORIES } from './theme.js';
@@ -19,6 +22,58 @@ import TodayView from './components/todo/TodayView.jsx';
 import FinanceTrackerView from './components/finance/FinanceTrackerView.jsx';
 import TransactionModal from './components/finance/TransactionModal.jsx';
 import FinanceCategoryPanel from './components/finance/FinanceCategoryPanel.jsx';
+
+function SortableHabitRow({ habit, hitsThisMonth, goalPerHabit, weeks, today, isDone, toggle, setEditHabit }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: habit.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    display: 'flex', alignItems: 'center', borderTop: `1px solid ${C.line}`,
+  };
+  const h = habit;
+  return (
+    <div ref={setNodeRef} style={style} className="hs-row">
+      <div style={{ width: 220, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 6px 7px 0' }}>
+        <button {...attributes} {...listeners} style={{ background: 'none', border: 'none', color: C.sub, cursor: 'grab', padding: '0 2px', flexShrink: 0, display: 'flex', alignItems: 'center', touchAction: 'none' }}>
+          <GripVertical size={13} />
+        </button>
+        <span style={{ fontSize: 15 }}>{h.icon}</span>
+        <span style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</span>
+        <button onClick={() => setEditHabit(h)} style={{ background: 'none', border: 'none', color: C.sub, cursor: 'pointer', marginLeft: 'auto', flexShrink: 0 }}><Pencil size={11} /></button>
+      </div>
+      <div style={{ width: 50, flexShrink: 0, textAlign: 'center', fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: C.sub }}>
+        {hitsThisMonth}/{goalPerHabit}
+      </div>
+      {weeks.map((w, wi) => {
+        const col = WEEK_COLORS[wi % WEEK_COLORS.length];
+        return (
+          <div key={wi} style={{ display: 'flex', width: 210, flexShrink: 0 }}>
+            {w.map((d, di) => {
+              if (!d) return <div key={di} style={{ flex: 1, padding: '5px 0', background: 'rgba(255,255,255,0.02)' }} />;
+              const done = isDone(h.id, d);
+              const future = d > today;
+              const isToday = d === today;
+              return (
+                <div key={di} style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '5px 0', background: isToday ? '#F5A62333' : col.bg + '55' }}>
+                  <div className={future ? '' : 'hs-cell'} onClick={() => !future && toggle(h.id, d)} style={{
+                    width: 17, height: 17, borderRadius: 4,
+                    background: done ? C.tealDark : 'rgba(255,255,255,0.08)',
+                    border: `${isToday ? 2 : 1.4}px solid ${done ? C.tealDark : isToday ? C.warn : 'rgba(255,255,255,0.25)'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    opacity: future ? 0.35 : 1,
+                  }}>
+                    {done && <Check size={11} color="#fff" strokeWidth={3.2} />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function HabitSheet() {
   const [loading, setLoading] = useState(true);
@@ -187,7 +242,7 @@ export default function HabitSheet() {
   }
   function updateHabit(h) {
     habitsDb.updateHabitRow(h.id, h)
-      .then(() => { setHabits(prev => prev.map(x => x.id === h.id ? h : x)); setEditHabit(null); showToast('Habit updated'); })
+      .then(() => { setHabits(prev => prev.map(x => x.id === h.id ? { ...x, ...h } : x)); setEditHabit(null); showToast('Habit updated'); })
       .catch(showError);
   }
   function deleteHabit(id) {
@@ -195,13 +250,37 @@ export default function HabitSheet() {
       .then(() => { setHabits(prev => prev.filter(x => x.id !== id)); setEditHabit(null); showToast('Habit removed'); })
       .catch(showError);
   }
+  function reorderHabitsList(newHabits) {
+    const prev = habits;
+    setHabits(newHabits);
+    habitsDb.reorderHabits(newHabits.map(h => h.id)).catch(e => {
+      setHabits(prev);
+      showError(e);
+    });
+  }
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  function handleDragEnd(event) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = habits.findIndex(h => h.id === active.id);
+    const newIdx = habits.findIndex(h => h.id === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
+    const reordered = arrayMove(habits, oldIdx, newIdx);
+    reorderHabitsList(reordered);
+  }
 
   const weeks = useMemo(() => buildWeeks(cursor.y, cursor.m), [cursor]);
   const allDatesInMonth = useMemo(() => weeks.flat().filter(Boolean), [weeks]);
   const daysInMonth = allDatesInMonth.length;
   const goalPerHabit = daysInMonth;
 
+  // Weighted count — used for percentage calculations
   function dayCompletedCount(dateStr) {
+    return habits.reduce((s, h) => s + (isDone(h.id, dateStr) ? (h.weight || 1) : 0), 0);
+  }
+  // Raw count — used for display text ("3/10" style)
+  function dayCompletedRawCount(dateStr) {
     return habits.reduce((s, h) => s + (isDone(h.id, dateStr) ? 1 : 0), 0);
   }
   function mondayOf(dateStr) {
@@ -213,35 +292,46 @@ export default function HabitSheet() {
 
   const today = todayStr();
 
+  const weightSum = useMemo(() => habits.reduce((s, h) => s + (h.weight || 1), 0), [habits]);
+
   // Top stats are always computed fresh from habits+logs — independent of
   // which month the grid below happens to be browsing.
   const topStats = useMemo(() => {
-    const todayCompleted = dayCompletedCount(today);
+    // Weighted values (for percentage / progress bar)
+    const todayWeighted = dayCompletedCount(today);
+    const todayPct = weightSum ? Math.round((todayWeighted / weightSum) * 100) : 0;
+    // Raw counts (for display text)
+    const todayCompleted = dayCompletedRawCount(today);
     const todayGoal = habits.length;
-    const todayPct = todayGoal ? Math.round((todayCompleted / todayGoal) * 100) : 0;
 
     const mon = mondayOf(today);
     const weekDates = Array.from({ length: 7 }, (_, i) => addDaysStr(mon, i));
-    const weekDone = weekDates.reduce((s, d) => s + dayCompletedCount(d), 0);
+    const weekWeighted = weekDates.reduce((s, d) => s + dayCompletedCount(d), 0);
+    const weekWeightedGoal = 7 * weightSum;
+    const weekPct = weekWeightedGoal ? Math.round((weekWeighted / weekWeightedGoal) * 100) : 0;
+    const weekDone = weekDates.reduce((s, d) => s + dayCompletedRawCount(d), 0);
     const weekGoal = 7 * habits.length;
-    const weekPct = weekGoal ? Math.round((weekDone / weekGoal) * 100) : 0;
 
+    const monthWeightedGoal = weightSum * daysInMonth;
+    const monthWeighted = allDatesInMonth.reduce((s, d) => s + dayCompletedCount(d), 0);
+    const monthPct = monthWeightedGoal ? Math.round((monthWeighted / monthWeightedGoal) * 100) : 0;
+    const monthCompleted = allDatesInMonth.reduce((s, d) => s + dayCompletedRawCount(d), 0);
     const monthGoal = habits.length * daysInMonth;
-    const monthCompleted = allDatesInMonth.reduce((s, d) => s + dayCompletedCount(d), 0);
-    const monthPct = monthGoal ? Math.round((monthCompleted / monthGoal) * 100) : 0;
 
     return { todayCompleted, todayGoal, todayPct, weekDone, weekGoal, weekPct, monthGoal, monthCompleted, monthPct };
-  }, [habits, logs, today, allDatesInMonth, daysInMonth]);
+  }, [habits, logs, today, allDatesInMonth, daysInMonth, weightSum]);
 
   const { todayCompleted, todayGoal, todayPct, weekDone, weekGoal, weekPct, monthGoal, monthCompleted, monthPct } = topStats;
 
   // Per-week totals for bar chart (these intentionally follow the browsed month)
   const weekTotals = useMemo(() => weeks.map(w => {
     const validDays = w.filter(Boolean);
-    const done = validDays.reduce((s, d) => s + dayCompletedCount(d), 0);
+    const weightedDone = validDays.reduce((s, d) => s + dayCompletedCount(d), 0);
+    const weightedGoal = validDays.length * weightSum;
+    const done = validDays.reduce((s, d) => s + dayCompletedRawCount(d), 0);
     const goal = validDays.length * habits.length;
-    return { done, goal, pct: goal ? Math.round((done / goal) * 100) : 0 };
-  }), [weeks, logs, habits]);
+    return { done, goal, pct: weightedGoal ? Math.round((weightedDone / weightedGoal) * 100) : 0 };
+  }), [weeks, logs, habits, weightSum]);
 
   // Combined per-habit performance: consistency %, current streak, best streak
   const habitPerformance = useMemo(() => {
@@ -426,7 +516,7 @@ export default function HabitSheet() {
         </div>
 
         {/* Monthly trend chart */}
-        <TrendChart allDatesInMonth={allDatesInMonth} dayCompletedCount={dayCompletedCount} habitsCount={habits.length} today={today} />
+        <TrendChart allDatesInMonth={allDatesInMonth} dayCompletedCount={dayCompletedCount} habitsCount={weightSum} today={today} />
 
         {/* Main grid */}
         <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 14, marginBottom: 22, overflowX: 'auto' }}>
@@ -441,7 +531,7 @@ export default function HabitSheet() {
           <div style={{ minWidth: 640 + weeks.length * 210 }}>
             {/* Week header row */}
             <div style={{ display: 'flex' }}>
-              <div style={{ width: 190, flexShrink: 0 }} />
+              <div style={{ width: 220, flexShrink: 0 }} />
               <div style={{ width: 50, flexShrink: 0 }} />
               {weeks.map((w, wi) => {
                 const col = WEEK_COLORS[wi % WEEK_COLORS.length];
@@ -469,65 +559,35 @@ export default function HabitSheet() {
               })}
             </div>
 
-            {/* Habit rows */}
-            {habits.map(h => {
-              const hitsThisMonth = allDatesInMonth.reduce((s, d) => s + (isDone(h.id, d) ? 1 : 0), 0);
-              return (
-                <div key={h.id} className="hs-row" style={{ display: 'flex', alignItems: 'center', borderTop: `1px solid ${C.line}` }}>
-                  <div style={{ width: 190, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '7px 6px 7px 2px' }}>
-                    <span style={{ fontSize: 15 }}>{h.icon}</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</span>
-                    <button onClick={() => setEditHabit(h)} style={{ background: 'none', border: 'none', color: C.sub, cursor: 'pointer', marginLeft: 'auto', flexShrink: 0 }}><Pencil size={11} /></button>
-                  </div>
-                  <div style={{ width: 50, flexShrink: 0, textAlign: 'center', fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: C.sub }}>
-                    {hitsThisMonth}/{goalPerHabit}
-                  </div>
-                  {weeks.map((w, wi) => {
-                    const col = WEEK_COLORS[wi % WEEK_COLORS.length];
-                    return (
-                      <div key={wi} style={{ display: 'flex', width: 210, flexShrink: 0 }}>
-                        {w.map((d, di) => {
-                          if (!d) return <div key={di} style={{ flex: 1, padding: '5px 0', background: 'rgba(255,255,255,0.02)' }} />;
-                          const done = isDone(h.id, d);
-                          const future = d > today;
-                          const isToday = d === today;
-                          return (
-                            <div key={di} style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '5px 0', background: isToday ? '#F5A62333' : col.bg + '55' }}>
-                              <div className={future ? '' : 'hs-cell'} onClick={() => !future && toggle(h.id, d)} style={{
-                                width: 17, height: 17, borderRadius: 4,
-                                background: done ? C.tealDark : 'rgba(255,255,255,0.08)',
-                                border: `${isToday ? 2 : 1.4}px solid ${done ? C.tealDark : isToday ? C.warn : 'rgba(255,255,255,0.25)'}`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                opacity: future ? 0.35 : 1,
-                              }}>
-                                {done && <Check size={11} color="#fff" strokeWidth={3.2} />}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
+            {/* Habit rows — drag-and-drop sortable */}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={habits.map(h => h.id)} strategy={verticalListSortingStrategy}>
+                {habits.map(h => {
+                  const hitsThisMonth = allDatesInMonth.reduce((s, d) => s + (isDone(h.id, d) ? 1 : 0), 0);
+                  return (
+                    <SortableHabitRow key={h.id} habit={h} hitsThisMonth={hitsThisMonth} goalPerHabit={goalPerHabit}
+                      weeks={weeks} today={today} isDone={isDone} toggle={toggle} setEditHabit={setEditHabit} />
+                  );
+                })}
+              </SortableContext>
+            </DndContext>
 
             {/* Totals row */}
             <div style={{ display: 'flex', alignItems: 'center', borderTop: `2px solid ${C.ink}22`, marginTop: 4 }}>
-              <div style={{ width: 190, flexShrink: 0, padding: '8px 6px', fontSize: 11.5, fontWeight: 700 }}>Daily total</div>
+              <div style={{ width: 220, flexShrink: 0, padding: '8px 6px', fontSize: 11.5, fontWeight: 700 }}>Daily total</div>
               <div style={{ width: 50, flexShrink: 0 }} />
               {weeks.map((w, wi) => (
                 <div key={wi} style={{ display: 'flex', width: 210, flexShrink: 0 }}>
                   {w.map((d, di) => (
                     <div key={di} style={{ flex: 1, textAlign: 'center', fontSize: 10, fontFamily: "'JetBrains Mono',monospace", color: C.sub, padding: '6px 0' }}>
-                      {d ? dayCompletedCount(d) : ''}
+                      {d ? dayCompletedRawCount(d) : ''}
                     </div>
                   ))}
                 </div>
               ))}
             </div>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: 190, flexShrink: 0, padding: '2px 6px 10px', fontSize: 10.5, color: C.sub }}>Week %</div>
+              <div style={{ width: 220, flexShrink: 0, padding: '2px 6px 10px', fontSize: 10.5, color: C.sub }}>Week %</div>
               <div style={{ width: 50, flexShrink: 0 }} />
               {weeks.map((w, wi) => (
                 <div key={wi} style={{ width: 210, flexShrink: 0, textAlign: 'center', fontSize: 10.5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: weekTotals[wi].pct >= 50 ? C.tealDark : C.bad, paddingBottom: 8 }}>

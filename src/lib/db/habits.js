@@ -9,18 +9,22 @@ async function uid() {
 export async function listHabits() {
   const { data, error } = await supabase.from('habits').select('*').order('sort_order');
   if (error) throw error;
-  return data.map(h => ({ id: h.id, name: h.name, icon: h.icon }));
+  return data.map(h => ({ id: h.id, name: h.name, icon: h.icon, weight: h.weight ?? 1 }));
 }
 
-export async function createHabit({ name, icon }) {
+export async function createHabit({ name, icon, weight }) {
   const user_id = await uid();
-  const { data, error } = await supabase.from('habits').insert({ user_id, name, icon }).select().single();
+  const row = { user_id, name, icon };
+  if (weight !== undefined && weight !== null) row.weight = weight;
+  const { data, error } = await supabase.from('habits').insert(row).select().single();
   if (error) throw error;
-  return { id: data.id, name: data.name, icon: data.icon };
+  return { id: data.id, name: data.name, icon: data.icon, weight: data.weight ?? 1 };
 }
 
-export async function updateHabitRow(id, { name, icon }) {
-  const { error } = await supabase.from('habits').update({ name, icon }).eq('id', id);
+export async function updateHabitRow(id, { name, icon, weight }) {
+  const fields = { name, icon };
+  if (weight !== undefined && weight !== null) fields.weight = weight;
+  const { error } = await supabase.from('habits').update(fields).eq('id', id);
   if (error) throw error;
 }
 
@@ -29,12 +33,19 @@ export async function deleteHabitRow(id) {
   if (error) throw error;
 }
 
+export async function reorderHabits(orderedIds) {
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase.from('habits').update({ sort_order: i }).eq('id', orderedIds[i]);
+    if (error) throw error;
+  }
+}
+
 export async function seedDefaultHabits(defaults) {
   const user_id = await uid();
   const rows = defaults.map((h, i) => ({ user_id, name: h.name, icon: h.icon, sort_order: i }));
   const { data, error } = await supabase.from('habits').insert(rows).select();
   if (error) throw error;
-  return data.map(h => ({ id: h.id, name: h.name, icon: h.icon }));
+  return data.map(h => ({ id: h.id, name: h.name, icon: h.icon, weight: h.weight ?? 1 }));
 }
 
 // Logs are stored as one row per (habit, date) done day — presence means

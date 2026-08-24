@@ -11,6 +11,7 @@ create table habits (
   name text not null,
   icon text not null default '🎯',
   sort_order int not null default 0,
+  weight numeric not null default 1 check (weight > 0),  -- migration 004
   created_at timestamptz default now(),
   unique (user_id, name)  -- migration 001
 );

@@ -25,3 +25,10 @@ export function buildWeeks(year, month) {
   return weeks;
 }
 export const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+export function mondayOf(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = (d.getDay() + 6) % 7; // Monday = 0
+  d.setDate(d.getDate() - day);
+  return toDateStr(d);
+}

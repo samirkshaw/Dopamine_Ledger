@@ -44,6 +44,7 @@ function fromRow(t) {
     id: t.id, title: t.title, due: t.due_date, priority: t.priority,
     category: t.category_id, notes: t.notes, done: t.done, doneAt: t.done_at,
     plannedDate: t.planned_date, source: t.source, createdAt: t.created_at,
+    goalId: t.goal_id, goalContribution: t.goal_contribution, scheduledTime: t.scheduled_time,
   };
 }
 
@@ -60,6 +61,9 @@ export async function createTaskRow(task) {
     category_id: task.category || null, notes: task.notes || null,
     planned_date: task.plannedDate || null,
     source: task.source || 'task',
+    goal_id: task.goalId || null,
+    goal_contribution: task.goalContribution || 1,
+    scheduled_time: task.scheduledTime || null,
   }).select().single();
   if (error) throw error;
   return fromRow(data);
@@ -69,6 +73,9 @@ export async function updateTaskRow(id, task) {
   const { error } = await supabase.from('tasks').update({
     title: task.title, due_date: task.due || null, priority: task.priority,
     category_id: task.category || null, notes: task.notes || null,
+    goal_id: task.goalId || null,
+    goal_contribution: task.goalContribution || 1,
+    scheduled_time: task.scheduledTime || null,
   }).eq('id', id);
   if (error) throw error;
 }

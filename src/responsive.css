@@ -14,6 +14,25 @@ html, body {
   width: 100%;
 }
 
+/* ── Today page: CSS Grid layout (mobile-first single column) ────────── */
+.today-layout {
+  display: grid;
+  grid-template-areas: "goals" "main";
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.today-goals {
+  grid-area: goals;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin-bottom: 18px;
+}
+.today-main {
+  grid-area: main;
+  min-width: 0;
+}
+
 @media (max-width: 640px) {
   /* Page container */
   .hs-page-root {
@@ -217,5 +236,24 @@ html, body {
   /* Habit performance table on mobile */
   .hs-perf-habit-col {
     max-width: 120px !important;
+  }
+}
+
+/* ── Desktop two-column layout for Today page (wide viewports) ───────── */
+/* Distinct from the 640px mobile breakpoint above — this is a separate  */
+/* layout enhancement for wide screens, not a mobile override.           */
+@media (min-width: 1024px) {
+  .today-layout {
+    grid-template-areas: "main goals";
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .today-goals {
+    position: sticky;
+    top: 20px;
+    margin-bottom: 0;
+    z-index: 10;
   }
 }

@@ -4,12 +4,13 @@ import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSe
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { toDateStr, todayStr, addDaysStr, monthLabel, buildWeeks, DOW } from './lib/dateHelpers.js';
+import { toDateStr, todayStr, addDaysStr, monthLabel, buildWeeks, DOW, mondayOf } from './lib/dateHelpers.js';
 import { C, WEEK_COLORS, FONT_IMPORT, DEFAULT_HABITS, DEFAULT_CATEGORIES, DEFAULT_FINANCE_CATEGORIES } from './theme.js';
 import { signOut } from './lib/auth.js';
 import * as habitsDb from './lib/db/habits.js';
 import * as tasksDb from './lib/db/tasks.js';
 import * as financeDb from './lib/db/finance.js';
+import * as goalsDb from './lib/db/goals.js';
 
 import StatCard from './components/common/StatCard.jsx';
 import TrendChart from './components/common/TrendChart.jsx';
@@ -84,6 +85,7 @@ export default function HabitSheet() {
   const [transactions, setTransactions] = useState([]);
   const [financeCategories, setFinanceCategories] = useState([]);
   const [page, setPage] = useState('habits'); // 'habits' | 'tasks' | 'today' | 'finance'
+  const [goals, setGoals] = useState([]);
   const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [showAdd, setShowAdd] = useState(false);
   const [editHabit, setEditHabit] = useState(null);
@@ -116,7 +118,8 @@ export default function HabitSheet() {
           tasksDb.listTasks(),
           financeDb.listTransactions(),
         ]);
-        setHabits(h); setLogs(l); setTasks(t); setCategories(cats); setTransactions(txns); setFinanceCategories(finCats);
+        const g = await goalsDb.listGoalsForWeek(mondayOf(todayStr()));
+        setHabits(h); setLogs(l); setTasks(t); setCategories(cats); setTransactions(txns); setFinanceCategories(finCats); setGoals(g);
       } catch (e) {
         console.error('Failed to load data', e);
       } finally {
@@ -136,6 +139,27 @@ export default function HabitSheet() {
   function updateTask(task) {
     tasksDb.updateTaskRow(task.id, task)
       .then(() => { setTasks(prev => prev.map(x => x.id === task.id ? { ...x, ...task } : x)); setEditTask(null); showToast('Task updated'); })
+      .catch(showError);
+  }
+
+  function addGoal(goal) {
+    const weekStart = mondayOf(todayStr());
+    goalsDb.createGoal({ ...goal, weekStart })
+      .then(row => { setGoals(prev => [...prev, row]); showToast('Goal added'); })
+      .catch(showError);
+  }
+  function updateGoal(goal) {
+    goalsDb.updateGoalRow(goal.id, goal)
+      .then(() => { setGoals(prev => prev.map(g => g.id === goal.id ? { ...g, ...goal } : g)); showToast('Goal updated'); })
+      .catch(showError);
+  }
+  function deleteGoal(id) {
+    goalsDb.deleteGoalRow(id)
+      .then(() => {
+        setGoals(prev => prev.filter(g => g.id !== id));
+        setTasks(prev => prev.map(t => t.goalId === id ? { ...t, goalId: null } : t));
+        showToast('Goal removed');
+      })
       .catch(showError);
   }
   function deleteTask(id) {
@@ -286,11 +310,8 @@ export default function HabitSheet() {
   function dayCompletedRawCount(dateStr) {
     return habits.reduce((s, h) => s + (isDone(h.id, dateStr) ? 1 : 0), 0);
   }
-  function mondayOf(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
-    const day = (d.getDay() + 6) % 7; // Monday = 0
-    d.setDate(d.getDate() - day);
-    return toDateStr(d);
+  function mondayOfLocal(dateStr) {
+    return mondayOf(dateStr);
   }
 
   const today = todayStr();
@@ -307,7 +328,7 @@ export default function HabitSheet() {
     const todayCompleted = dayCompletedRawCount(today);
     const todayGoal = habits.length;
 
-    const mon = mondayOf(today);
+    const mon = mondayOfLocal(today);
     const weekDates = Array.from({ length: 7 }, (_, i) => addDaysStr(mon, i));
     const weekWeighted = weekDates.reduce((s, d) => s + dayCompletedCount(d), 0);
     const weekWeightedGoal = 7 * weightSum;
@@ -668,10 +689,15 @@ export default function HabitSheet() {
           <TodayView
             tasks={tasks}
             categories={categories}
+            goals={goals}
             onToggle={toggleTaskDone}
             onAddTask={addTask}
+            onUpdateTask={updateTask}
             onSetPlannedDate={setTaskPlannedDate}
             onDeleteTask={deleteTask}
+            onAddGoal={addGoal}
+            onUpdateGoal={updateGoal}
+            onDeleteGoal={deleteGoal}
           />
         )}
 
@@ -698,7 +724,7 @@ export default function HabitSheet() {
         <HabitModal habit={editHabit} onClose={() => { setShowAdd(false); setEditHabit(null); }} onSave={editHabit ? updateHabit : addHabit} onDelete={editHabit ? () => deleteHabit(editHabit.id) : null} />
       )}
       {editTask && (
-        <TaskModal task={editTask} categories={categories} onClose={() => setEditTask(null)} onSave={updateTask} onDelete={() => deleteTask(editTask.id)} />
+        <TaskModal task={editTask} categories={categories} goals={goals} onClose={() => setEditTask(null)} onSave={updateTask} onDelete={() => deleteTask(editTask.id)} />
       )}
       {showCatPanel && (
         <CategoryPanel categories={categories} onClose={() => setShowCatPanel(false)} onAdd={addCategory} onEdit={editCategory} onDelete={deleteCategory} />

@@ -1,35 +1,46 @@
 // ---------- Design tokens ----------
-// Dark, glassy backdrop with a warm gold brand accent and a violet
-// secondary — a luminous-canvas mood without borrowing literal imagery.
+// Dark, luxury luminous canvas with warm amber-gold accents and
+// electric violet secondaries — ultra-clean glassmorphism.
 export const C = {
-  bg: '#0B0912',
-  bgDeep: '#060509',
-  panel: 'rgba(255,255,255,0.045)',
-  panelSolid: '#15111E',
-  ink: '#F3EEE2',
-  sub: '#9C93AE',
-  line: 'rgba(255,255,255,0.09)',
-  teal: '#E8C170',
-  tealDark: '#B4700F',
-  good: '#5FCB98',
-  warn: '#E8B454',
-  bad: '#E8836F',
-  violet: '#8B7FE0',
-  gold: '#E8C170',
-  chip: '#2B2438',
+  bg: '#09070F',
+  bgDeep: '#050308',
+  panel: 'rgba(255, 255, 255, 0.04)',
+  panelElevated: 'rgba(255, 255, 255, 0.065)',
+  panelSolid: '#151120',
+  panelCard: 'rgba(21, 17, 32, 0.85)',
+  ink: '#F8F5EE',
+  sub: '#9D93B2',
+  subMuted: '#6B6282',
+  line: 'rgba(255, 255, 255, 0.08)',
+  lineLight: 'rgba(255, 255, 255, 0.14)',
+  teal: '#F5C869',
+  tealDark: '#C97D10',
+  good: '#4ADE80',
+  goodDark: '#16A34A',
+  warn: '#FBBF24',
+  bad: '#F87171',
+  badDark: '#DC2626',
+  violet: '#9D8DF1',
+  violetDark: '#725CE0',
+  gold: '#F5C869',
+  goldDark: '#C97D10',
+  chip: '#251F33',
+  glowGold: 'rgba(245, 200, 105, 0.28)',
+  glowViolet: 'rgba(157, 141, 241, 0.25)',
+  glowGreen: 'rgba(74, 222, 128, 0.25)',
 };
 
-// Week-block palette, cycling — translucent tints over the dark panel,
-// each with a richer solid for the pill header.
+// Week-block palette, cycling — luminous tints with saturated header solids
 export const WEEK_COLORS = [
-  { bg: 'rgba(139,127,224,0.10)', head: '#8B7FE0' }, // violet
-  { bg: 'rgba(232,193,112,0.10)', head: '#B4700F' }, // gold
-  { bg: 'rgba(95,203,152,0.09)',  head: '#4F9C6E' }, // mint
-  { bg: 'rgba(224,138,169,0.10)', head: '#C77597' }, // rose
-  { bg: 'rgba(127,168,222,0.10)', head: '#5A8FC7' }, // sky
+  { bg: 'rgba(157, 141, 241, 0.11)', head: '#9D8DF1' }, // violet
+  { bg: 'rgba(245, 200, 105, 0.11)', head: '#D48817' }, // gold
+  { bg: 'rgba(74, 222, 128, 0.10)',  head: '#22C55E' }, // emerald
+  { bg: 'rgba(244, 114, 182, 0.11)', head: '#DB2777' }, // rose
+  { bg: 'rgba(96, 165, 250, 0.11)',  head: '#2563EB' }, // sky
 ];
 
-export const FONT_IMPORT = `@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');`;
+export const FONT_IMPORT = `@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');`;
+
 
 export const DEFAULT_HABITS = [
   { id: 'h1', name: 'Deep Code', icon: '💻' },

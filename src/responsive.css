@@ -1,4 +1,4 @@
-/* Dopamine Ledger — Responsive CSS overrides (mobile breakpoint: 640px) */
+/* Dopamine Ledger — Modern Design System & Responsive CSS */
 
 html, body {
   margin: 0;
@@ -6,13 +6,130 @@ html, body {
   overflow-x: hidden;
   max-width: 100vw;
   width: 100%;
+  background: #09070F;
+  color: #F8F5EE;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   overflow-x: hidden;
   max-width: 100vw;
   width: 100%;
+  min-height: 100vh;
 }
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+::selection {
+  background: rgba(245, 200, 105, 0.32);
+  color: #FFF;
+}
+
+/* Glassmorphism & UI Utilities */
+.hs-glass {
+  background: rgba(21, 17, 32, 0.72) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+}
+
+.hs-card-hover {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease !important;
+}
+.hs-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+.hs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Form input focus styles */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: rgba(245, 200, 105, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(245, 200, 105, 0.16) !important;
+}
+
+/* Interactive elements & micro-animations */
+.hs-btn {
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.hs-btn:hover {
+  filter: brightness(1.08);
+}
+.hs-btn:active {
+  transform: scale(0.97);
+}
+
+.hs-cell {
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, filter 0.15s ease;
+}
+.hs-cell:hover {
+  filter: brightness(1.18);
+  transform: scale(1.12);
+}
+.hs-cell:active {
+  transform: scale(0.92);
+}
+
+.hs-row {
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.hs-row:hover {
+  background: rgba(255, 255, 255, 0.055) !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.04); }
+}
+
 
 /* ── Today page: CSS Grid layout (mobile-first single column) ────────── */
 .today-layout {

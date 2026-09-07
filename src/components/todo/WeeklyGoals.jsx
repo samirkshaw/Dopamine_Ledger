@@ -39,63 +39,73 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
   }
 
   return (
-    <div style={{
-      background: C.panelSolid,
-      border: `1px solid ${C.line}`, borderRadius: 16,
-      padding: '12px 14px',
+    <div className="hs-card-hover" style={{
+      background: 'rgba(21, 17, 32, 0.7)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: `1px solid ${C.line}`,
+      borderRadius: 18,
+      padding: 16,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: goals.length > 0 ? 10 : 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <Target size={15} color={C.violet} />
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 600, fontSize: 14 }}>Weekly Goals</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: goals.length > 0 ? 14 : 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 8,
+            background: 'rgba(157, 141, 241, 0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Target size={16} color={C.violet} />
+          </div>
+          <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14.5 }}>Weekly Goals</span>
         </div>
         <button onClick={() => { setEditGoal(null); setShowModal(true); }} className="hs-btn" style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          background: 'rgba(139,127,224,0.14)', border: `1px solid rgba(139,127,224,0.3)`,
-          borderRadius: 20, padding: '5px 10px', fontSize: 11, fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 5,
+          background: 'rgba(157, 141, 241, 0.15)', border: '1px solid rgba(157, 141, 241, 0.35)',
+          borderRadius: 999, padding: '5px 12px', fontSize: 11.5, fontWeight: 700,
           color: C.violet, cursor: 'pointer',
         }}>
-          <Plus size={12} /> Add goal
+          <Plus size={13} strokeWidth={2.6} /> Add goal
         </button>
       </div>
 
       {goals.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '6px 0 2px', color: C.sub, fontSize: 12 }}>
+        <div style={{ textAlign: 'center', padding: '12px 0 6px', color: C.sub, fontSize: 12.5 }}>
           No goals this week — add one to track progress!
         </div>
       )}
 
       {goals.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {goals.map(g => {
             const progress = goalProgress[g.id] || 0;
             const pct = Math.min(100, Math.round((progress / g.targetCount) * 100));
             const isMet = progress >= g.targetCount;
             return (
-              <div key={g.id} style={{
+              <div key={g.id} className="hs-row" style={{
                 display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 10px', borderRadius: 10,
-                background: 'rgba(255,255,255,0.035)',
-                border: `1px solid ${isMet ? 'rgba(95,203,152,0.3)' : C.line}`,
+                padding: '10px 12px', borderRadius: 12,
+                background: 'rgba(255,255,255,0.03)',
+                border: `1px solid ${isMet ? 'rgba(52, 211, 153, 0.3)' : 'rgba(255,255,255,0.05)'}`,
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.title}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ flex: 1, height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
                       <div style={{
-                        width: `${pct}%`, height: '100%', borderRadius: 3,
-                        background: isMet ? C.good : C.violet,
+                        width: `${pct}%`, height: '100%', borderRadius: 999,
+                        background: isMet ? 'linear-gradient(90deg, #10B981, #34D399)' : 'linear-gradient(90deg, #8B5CF6, #A78BFA)',
+                        boxShadow: isMet ? '0 0 8px rgba(52, 211, 153, 0.4)' : '0 0 8px rgba(139, 92, 246, 0.4)',
                         transition: 'width .3s ease',
                       }} />
                     </div>
-                    <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: isMet ? C.good : C.sub, whiteSpace: 'nowrap', fontWeight: 600 }}>
+                    <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: isMet ? '#34D399' : C.sub, whiteSpace: 'nowrap', fontWeight: 700 }}>
                       {progress} / {g.targetCount}{g.unit ? ` ${g.unit}` : ''}
                     </span>
                   </div>
                 </div>
-                <button onClick={() => { setEditGoal(g); setShowModal(true); }} className="hs-btn" style={{ background: 'none', border: 'none', color: C.sub, cursor: 'pointer', padding: 2, flexShrink: 0 }}>
+                <button onClick={() => { setEditGoal(g); setShowModal(true); }} className="hs-btn" style={{ background: 'none', border: 'none', color: C.sub, cursor: 'pointer', padding: 4, flexShrink: 0 }}>
                   <Pencil size={12} />
                 </button>
               </div>
@@ -104,12 +114,12 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
         </div>
       )}
 
-      {(showModal || editGoal) && (
+      {showModal && (
         <GoalModal
           goal={editGoal}
-          onClose={() => { setShowModal(false); setEditGoal(null); }}
           onSave={handleSave}
           onDelete={editGoal ? handleDelete : null}
+          onClose={() => { setShowModal(false); setEditGoal(null); }}
         />
       )}
     </div>

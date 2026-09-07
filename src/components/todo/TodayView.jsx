@@ -110,17 +110,17 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
 
   const rowStyle = {
     display: 'flex', alignItems: 'center', gap: 10,
-    padding: '10px 12px', borderRadius: 8,
-    background: 'rgba(255,255,255,0.035)',
-    borderLeft: '3px solid transparent',
+    padding: '11px 14px', borderRadius: 12,
+    background: 'rgba(255,255,255,0.03)',
+    borderLeft: '4px solid transparent',
   };
 
   const iconBtnStyle = (active) => ({
     display: 'flex', alignItems: 'center', gap: 4,
-    padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
-    border: `1px solid ${active ? C.tealDark : C.line}`,
-    background: active ? 'rgba(180,112,15,0.18)' : 'transparent',
-    color: active ? C.tealDark : C.sub,
+    padding: '5px 12px', borderRadius: 999, fontSize: 11.5, fontWeight: 700,
+    border: `1px solid ${active ? C.gold : C.line}`,
+    background: active ? 'linear-gradient(135deg, #F5C869, #D97706)' : 'rgba(255,255,255,0.04)',
+    color: active ? '#181003' : C.sub,
     cursor: 'pointer',
   });
 
@@ -132,9 +132,10 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
     const goal = goalForTask(t);
     return (
       <div key={t.id} className="hs-row" style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '11px 12px', borderRadius: 8,
-        background: t.done ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.045)',
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '12px 14px', borderRadius: 12,
+        background: t.done ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.035)',
+        border: '1px solid rgba(255,255,255,0.05)',
         borderLeft: `4px solid ${cat.color}`,
         opacity: t.done ? 0.65 : 1,
       }}>
@@ -144,28 +145,33 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
           className="hs-cell"
           style={{
             width: 20, height: 20, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
-            background: t.done ? C.tealDark : 'rgba(255,255,255,0.05)',
-            border: `1.6px solid ${t.done ? C.tealDark : C.line}`,
+            background: t.done ? 'linear-gradient(135deg, #10B981, #059669)' : 'rgba(255,255,255,0.06)',
+            border: `1.6px solid ${t.done ? '#10B981' : C.line}`,
+            boxShadow: t.done ? '0 2px 8px rgba(16, 185, 129, 0.35)' : 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          {t.done && <Check size={12} color="#fff" strokeWidth={3.2} />}
+          {t.done && <Check size={12} color="#fff" strokeWidth={3.4} />}
         </div>
 
         {/* Priority dot */}
         {!t.done && (
-          <span title={`${p.label} priority`} style={{ width: 7, height: 7, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+          <span title={`${p.label} priority`} style={{
+            width: 7, height: 7, borderRadius: '50%', background: p.color, flexShrink: 0,
+            boxShadow: `0 0 6px ${p.color}88`,
+          }} />
         )}
 
         {/* Time badge */}
         {t.scheduledTime && (
           <span style={{
-            display: 'flex', alignItems: 'center', gap: 3,
-            fontSize: 10.5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600,
-            color: C.violet, background: 'rgba(139,127,224,0.12)',
-            padding: '2px 7px', borderRadius: 6, flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 4,
+            fontSize: 11, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600,
+            color: C.violet, background: 'rgba(157, 141, 241, 0.15)',
+            border: '1px solid rgba(157, 141, 241, 0.3)',
+            padding: '3px 8px', borderRadius: 8, flexShrink: 0,
           }}>
-            <Clock size={10} />
+            <Clock size={11} />
             {formatTime(t.scheduledTime)}
           </span>
         )}
@@ -174,7 +180,7 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
         <span
           onClick={() => setEditTask(t)}
           style={{
-            flex: 1, fontSize: 13.5,
+            flex: 1, fontSize: 13.5, fontWeight: t.done ? 400 : 500,
             textDecoration: t.done ? 'line-through' : 'none',
             color: t.done ? C.sub : C.ink,
             wordBreak: 'break-word',
@@ -188,10 +194,10 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
         {goal && (
           <span style={{
             display: 'flex', alignItems: 'center', gap: 4,
-            fontSize: 10, fontWeight: 600, color: C.violet,
-            background: 'rgba(139,127,224,0.12)', border: '1px solid rgba(139,127,224,0.25)',
-            padding: '2px 8px', borderRadius: 12, flexShrink: 0,
-            maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            fontSize: 10.5, fontWeight: 700, color: C.violet,
+            background: 'rgba(157, 141, 241, 0.14)', border: '1px solid rgba(157, 141, 241, 0.35)',
+            padding: '2px 8px', borderRadius: 999, flexShrink: 0,
+            maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.violet, flexShrink: 0 }} />
             {goal.title}
@@ -202,6 +208,7 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
         {cat.id && (
           <span title={cat.name} style={{
             width: 8, height: 8, borderRadius: '50%', background: cat.color, flexShrink: 0,
+            boxShadow: `0 0 6px ${cat.color}66`,
           }} />
         )}
 
@@ -212,8 +219,8 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
           className="hs-btn"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 22, height: 22, borderRadius: 6, border: `1px solid ${C.line}`,
-            background: 'transparent', color: C.sub, cursor: 'pointer', flexShrink: 0,
+            width: 24, height: 24, borderRadius: 8, border: `1px solid ${C.line}`,
+            background: 'rgba(255,255,255,0.03)', color: C.sub, cursor: 'pointer', flexShrink: 0,
           }}
         >
           <X size={12} />
@@ -246,40 +253,43 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
 
       {/* ── Stale-item review banner ──────────────────────────────────────── */}
       {staleTasks.length > 0 && (
-        <div style={{
-          background: 'rgba(232,132,111,0.08)', border: `1px solid rgba(232,132,111,0.28)`,
-          borderRadius: 14, padding: '12px 14px', marginBottom: 18,
+        <div className="hs-card-hover" style={{
+          background: 'rgba(232, 132, 111, 0.08)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(232, 132, 111, 0.32)',
+          borderRadius: 18, padding: '14px 16px', marginBottom: 18,
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-            <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 600, fontSize: 13.5, color: C.bad }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: C.bad }}>
               ⚠ {staleTasks.length} unfinished task{staleTasks.length > 1 ? 's' : ''} from earlier
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={carryAll} className="hs-btn" style={iconBtnStyle(true)}>
-                <ChevronsRight size={11} /> Carry all
+                <ChevronsRight size={13} /> Carry all
               </button>
               <button onClick={dropAll} className="hs-btn" style={{ ...iconBtnStyle(false), borderColor: 'rgba(232,132,111,0.4)', color: C.bad }}>
-                <Trash2 size={11} /> Drop all
+                <Trash2 size={12} /> Drop all
               </button>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {staleTasks.map(t => {
               const cat = catById(categories, t.category);
               const p = PRIORITY[t.priority] || PRIORITY.med;
               return (
-                <div key={t.id} style={{ ...rowStyle, borderLeftColor: cat.color, justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                <div key={t.id} className="hs-row" style={{ ...rowStyle, borderLeftColor: cat.color, justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
                     <span title={`${p.label} priority`} style={{ width: 7, height: 7, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
-                    <span style={{ fontSize: 10, color: C.sub, fontFamily: "'JetBrains Mono',monospace", whiteSpace: 'nowrap' }}>{t.plannedDate}</span>
+                    <span style={{ fontSize: 13.5, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
+                    <span style={{ fontSize: 10.5, color: C.sub, fontFamily: "'JetBrains Mono',monospace", whiteSpace: 'nowrap' }}>{t.plannedDate}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                     <button onClick={() => onSetPlannedDate(t.id, today)} className="hs-btn" style={iconBtnStyle(true)}>
-                      <ChevronsRight size={11} /> Carry
+                      <ChevronsRight size={12} /> Carry
                     </button>
                     <button onClick={() => removeFromToday(t)} className="hs-btn" style={{ ...iconBtnStyle(false), borderColor: 'rgba(232,132,111,0.4)', color: C.bad }}>
-                      <X size={11} /> Drop
+                      <X size={12} /> Drop
                     </button>
                   </div>
                 </div>
@@ -290,7 +300,18 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
       )}
 
       {/* ── Quick-add bar ─────────────────────────────────────────────────── */}
-      <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 14, padding: 12, marginBottom: 18, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div className="hs-card-hover" style={{
+        background: 'rgba(21, 17, 32, 0.7)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: `1px solid ${C.line}`,
+        borderRadius: 18,
+        padding: 14,
+        marginBottom: 18,
+        display: 'flex',
+        gap: 8,
+        flexWrap: 'wrap',
+      }}>
         <input
           value={quickTitle}
           onChange={e => setQuickTitle(e.target.value)}
@@ -298,8 +319,8 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
           placeholder="Quick-add to today…"
           className="hs-touch-target"
           style={{
-            flex: '1 1 200px', minWidth: 140, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`,
-            borderRadius: 10, padding: '10px 12px', color: C.ink, fontSize: 13, outline: 'none',
+            flex: '1 1 200px', minWidth: 140, background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.line}`,
+            borderRadius: 10, padding: '10px 14px', color: C.ink, fontSize: 13.5, outline: 'none',
           }}
         />
         {goals && goals.length > 0 && (
@@ -308,7 +329,7 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
             onChange={e => setQuickGoalId(e.target.value)}
             className="hs-touch-target"
             style={{
-              background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`,
+              background: '#181324', border: `1px solid ${C.line}`,
               borderRadius: 10, padding: '10px 12px', color: quickGoalId ? C.violet : C.sub,
               fontSize: 12.5, outline: 'none', cursor: 'pointer', maxWidth: 160,
             }}
@@ -330,37 +351,47 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
             title="Counts as (toward goal)"
             className="hs-touch-target"
             style={{
-              width: 50, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`,
+              width: 50, background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.line}`,
               borderRadius: 10, padding: '10px 8px', color: C.ink, fontSize: 13, outline: 'none', textAlign: 'center',
             }}
           />
         )}
         <button onClick={submitQuick} className="hs-btn hs-touch-target" style={{
-          display: 'flex', alignItems: 'center', gap: 5, background: C.teal, border: 'none',
-          borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 600, color: '#2B1B04', whiteSpace: 'nowrap',
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: 'linear-gradient(135deg, #F5C869, #D97706)', border: 'none',
+          borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700,
+          color: '#181003', whiteSpace: 'nowrap',
+          boxShadow: '0 4px 14px rgba(245, 200, 105, 0.3)',
         }}>
-          <Plus size={15} /> Add
+          <Plus size={15} strokeWidth={2.8} /> Add
         </button>
       </div>
 
       {/* ── Agenda list ────────────────────────────────────────────────────── */}
-      <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16 }}>
+      <div className="hs-card-hover" style={{
+        background: 'rgba(21, 17, 32, 0.7)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: `1px solid ${C.line}`,
+        borderRadius: 18,
+        padding: 18,
+      }}>
         {todayTasks.length === 0 ? (
           // ── Empty state ───────────────────────────────────────────────────
-          <div style={{ textAlign: 'center', padding: '28px 16px', color: C.sub, fontSize: 13 }}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>📋</div>
+          <div style={{ textAlign: 'center', padding: '36px 16px', color: C.sub, fontSize: 13.5 }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
             Nothing planned for today — pull a task in from the Tasks tab, or quick-add one above.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {/* Scheduled section */}
             {scheduledTasks.length > 0 && (
               <>
-                <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 600, fontSize: 14, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Clock size={14} color={C.violet} />
+                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14.5, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Clock size={15} color={C.violet} />
                   Scheduled
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                   {scheduledTasks.map(renderTaskRow)}
                 </div>
               </>
@@ -369,7 +400,7 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
             {/* Unscheduled section */}
             {unscheduledTasks.length > 0 && (
               <>
-                <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 600, fontSize: 14, marginBottom: 6, color: scheduledTasks.length > 0 ? C.sub : C.ink }}>
+                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14.5, marginBottom: 8, color: scheduledTasks.length > 0 ? C.sub : C.ink }}>
                   {scheduledTasks.length > 0 ? 'Unscheduled' : "Today's Checklist"}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

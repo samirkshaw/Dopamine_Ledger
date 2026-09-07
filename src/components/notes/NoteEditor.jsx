@@ -199,14 +199,18 @@ export default function NoteEditor({
   }, [tasks, note?.id]);
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', height: '100%', minHeight: 460,
-      background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16,
+    <div className="hs-card-hover" style={{
+      display: 'flex', flexDirection: 'column', height: '100%', minHeight: 480,
+      background: 'rgba(21, 17, 32, 0.7)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: `1px solid ${C.line}`,
+      borderRadius: 18,
       overflow: 'hidden', position: 'relative',
     }}>
       {/* Top action bar */}
       <div style={{
-        padding: '12px 16px', borderBottom: `1px solid ${C.line}`,
+        padding: '12px 18px', borderBottom: `1px solid ${C.line}`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexWrap: 'wrap', gap: 10, background: 'rgba(255,255,255,0.02)',
       }}>
@@ -217,7 +221,7 @@ export default function NoteEditor({
               className="hs-btn"
               title="Back to notes list"
               style={{
-                background: 'transparent', border: `1px solid ${C.line}`,
+                background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.line}`,
                 borderRadius: 8, padding: '6px 8px', color: C.ink, display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
               }}
@@ -231,8 +235,8 @@ export default function NoteEditor({
               value={note?.categoryId || ''}
               onChange={handleCategoryChange}
               style={{
-                fontSize: 12, padding: '5px 10px', borderRadius: 8,
-                border: `1px solid ${C.line}`, background: '#171320', color: C.ink,
+                fontFamily: "'Outfit', sans-serif", fontSize: 12, padding: '6px 12px', borderRadius: 999,
+                border: `1px solid ${C.line}`, background: '#181324', color: C.ink,
                 outline: 'none', maxWidth: 160,
               }}
             >
@@ -245,8 +249,9 @@ export default function NoteEditor({
 
           {isQuickNote && (
             <span style={{
-              fontSize: 11, background: 'rgba(232,193,112,0.12)', color: C.gold,
-              padding: '4px 8px', borderRadius: 6, fontWeight: 600,
+              fontSize: 11, background: 'rgba(245, 200, 105, 0.15)', color: C.gold,
+              border: '1px solid rgba(245, 200, 105, 0.3)',
+              padding: '4px 10px', borderRadius: 999, fontWeight: 700,
             }}>
               Quick Note
             </span>
@@ -260,14 +265,15 @@ export default function NoteEditor({
             className="hs-btn"
             title={note?.pinned ? 'Unpin note' : 'Pin to top'}
             style={{
-              background: note?.pinned ? 'rgba(232,193,112,0.2)' : 'transparent',
+              background: note?.pinned ? 'linear-gradient(135deg, #F5C869, #D97706)' : 'rgba(255,255,255,0.03)',
               border: `1px solid ${note?.pinned ? C.gold : C.line}`,
               borderRadius: 8, padding: '6px 10px',
-              color: note?.pinned ? C.gold : C.sub,
-              display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600,
+              color: note?.pinned ? '#181003' : C.sub,
+              boxShadow: note?.pinned ? '0 2px 10px rgba(245, 200, 105, 0.3)' : 'none',
+              display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700,
             }}
           >
-            <Pin size={13} fill={note?.pinned ? C.gold : 'none'} />
+            <Pin size={13} fill={note?.pinned ? '#181003' : 'none'} />
             <span>{note?.pinned ? 'Pinned' : 'Pin'}</span>
           </button>
 
@@ -277,13 +283,13 @@ export default function NoteEditor({
             className="hs-btn"
             title="Copy formatted note as Markdown"
             style={{
-              background: 'transparent', border: `1px solid ${C.line}`,
+              background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.line}`,
               borderRadius: 8, padding: '6px 10px', color: C.sub,
-              display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
+              display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600,
             }}
           >
-            {copied ? <Check size={13} color={C.good} /> : <Copy size={13} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
+            {copied ? <Check size={13} color="#10B981" /> : <Copy size={13} />}
+            <span style={{ color: copied ? '#10B981' : C.sub }}>{copied ? 'Copied' : 'Copy'}</span>
           </button>
 
           {/* Delete note */}
@@ -293,7 +299,7 @@ export default function NoteEditor({
               className="hs-btn"
               title="Delete note"
               style={{
-                background: 'transparent', border: `1px solid ${C.line}`,
+                background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.line}`,
                 borderRadius: 8, padding: '6px 8px', color: C.bad,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
@@ -306,7 +312,7 @@ export default function NoteEditor({
 
       {/* Title & Created Date (for Notebook notes) */}
       {!isQuickNote && (
-        <div style={{ padding: '12px 18px 10px', borderBottom: `1px solid ${C.line}` }}>
+        <div style={{ padding: '14px 20px 10px', borderBottom: `1px solid ${C.line}` }}>
           <input
             value={title}
             onChange={e => handleTitleChange(e.target.value)}
@@ -314,12 +320,12 @@ export default function NoteEditor({
             placeholder="Untitled Note"
             style={{
               width: '100%', background: 'transparent', border: 'none',
-              color: C.ink, fontFamily: "'Poppins',sans-serif", fontWeight: 700,
-              fontSize: 18, outline: 'none', padding: '4px 0',
+              color: C.ink, fontFamily: "'Outfit', sans-serif", fontWeight: 700,
+              fontSize: 20, outline: 'none', padding: '4px 0',
             }}
           />
           {createdDateFormatted && (
-            <div style={{ fontSize: 11.5, color: C.sub, marginTop: 2 }}>
+            <div style={{ fontSize: 11.5, color: C.sub, marginTop: 2, fontFamily: "'JetBrains Mono',monospace" }}>
               Created {createdDateFormatted}
             </div>
           )}
@@ -328,8 +334,8 @@ export default function NoteEditor({
 
       {/* Persistent formatting toolbar */}
       <div style={{
-        padding: '7px 14px', borderBottom: `1px solid ${C.line}`,
-        display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4,
+        padding: '8px 16px', borderBottom: `1px solid ${C.line}`,
+        display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 5,
         background: 'rgba(255,255,255,0.015)',
       }}>
         {/* Bold */}
@@ -338,13 +344,13 @@ export default function NoteEditor({
           className="hs-btn"
           title="Bold"
           style={{
-            background: editor?.isActive('bold') ? C.tealDark : 'transparent',
-            color: editor?.isActive('bold') ? '#fff' : C.sub,
-            border: `1px solid ${editor?.isActive('bold') ? C.tealDark : 'transparent'}`,
-            borderRadius: 6, padding: '5px 8px', display: 'flex', alignItems: 'center',
+            background: editor?.isActive('bold') ? 'linear-gradient(135deg, #F5C869, #D97706)' : 'transparent',
+            color: editor?.isActive('bold') ? '#181003' : C.sub,
+            border: `1px solid ${editor?.isActive('bold') ? C.gold : 'transparent'}`,
+            borderRadius: 7, padding: '5px 8px', display: 'flex', alignItems: 'center',
           }}
         >
-          <Bold size={13} />
+          <Bold size={13} strokeWidth={editor?.isActive('bold') ? 3 : 2} />
         </button>
 
         {/* Italic */}
@@ -353,13 +359,13 @@ export default function NoteEditor({
           className="hs-btn"
           title="Italic"
           style={{
-            background: editor?.isActive('italic') ? C.tealDark : 'transparent',
-            color: editor?.isActive('italic') ? '#fff' : C.sub,
-            border: `1px solid ${editor?.isActive('italic') ? C.tealDark : 'transparent'}`,
-            borderRadius: 6, padding: '5px 8px', display: 'flex', alignItems: 'center',
+            background: editor?.isActive('italic') ? 'linear-gradient(135deg, #F5C869, #D97706)' : 'transparent',
+            color: editor?.isActive('italic') ? '#181003' : C.sub,
+            border: `1px solid ${editor?.isActive('italic') ? C.gold : 'transparent'}`,
+            borderRadius: 7, padding: '5px 8px', display: 'flex', alignItems: 'center',
           }}
         >
-          <Italic size={13} />
+          <Italic size={13} strokeWidth={editor?.isActive('italic') ? 3 : 2} />
         </button>
 
         <div style={{ width: 1, height: 16, background: C.line, margin: '0 2px' }} />
@@ -370,13 +376,13 @@ export default function NoteEditor({
           className="hs-btn"
           title="Heading 1"
           style={{
-            background: editor?.isActive('heading', { level: 1 }) ? C.tealDark : 'transparent',
-            color: editor?.isActive('heading', { level: 1 }) ? '#fff' : C.sub,
-            border: `1px solid ${editor?.isActive('heading', { level: 1 }) ? C.tealDark : 'transparent'}`,
-            borderRadius: 6, padding: '5px 8px', display: 'flex', alignItems: 'center',
+            background: editor?.isActive('heading', { level: 1 }) ? 'linear-gradient(135deg, #F5C869, #D97706)' : 'transparent',
+            color: editor?.isActive('heading', { level: 1 }) ? '#181003' : C.sub,
+            border: `1px solid ${editor?.isActive('heading', { level: 1 }) ? C.gold : 'transparent'}`,
+            borderRadius: 7, padding: '5px 8px', display: 'flex', alignItems: 'center',
           }}
         >
-          <Heading1 size={13} />
+          <Heading1 size={13} strokeWidth={2.4} />
         </button>
 
         {/* Heading 2 */}
@@ -385,13 +391,13 @@ export default function NoteEditor({
           className="hs-btn"
           title="Heading 2"
           style={{
-            background: editor?.isActive('heading', { level: 2 }) ? C.tealDark : 'transparent',
-            color: editor?.isActive('heading', { level: 2 }) ? '#fff' : C.sub,
-            border: `1px solid ${editor?.isActive('heading', { level: 2 }) ? C.tealDark : 'transparent'}`,
-            borderRadius: 6, padding: '5px 8px', display: 'flex', alignItems: 'center',
+            background: editor?.isActive('heading', { level: 2 }) ? 'linear-gradient(135deg, #F5C869, #D97706)' : 'transparent',
+            color: editor?.isActive('heading', { level: 2 }) ? '#181003' : C.sub,
+            border: `1px solid ${editor?.isActive('heading', { level: 2 }) ? C.gold : 'transparent'}`,
+            borderRadius: 7, padding: '5px 8px', display: 'flex', alignItems: 'center',
           }}
         >
-          <Heading2 size={13} />
+          <Heading2 size={13} strokeWidth={2.4} />
         </button>
 
         <div style={{ width: 1, height: 16, background: C.line, margin: '0 2px' }} />
@@ -402,10 +408,10 @@ export default function NoteEditor({
           className="hs-btn"
           title="Bullet list"
           style={{
-            background: editor?.isActive('bulletList') ? C.tealDark : 'transparent',
-            color: editor?.isActive('bulletList') ? '#fff' : C.sub,
-            border: `1px solid ${editor?.isActive('bulletList') ? C.tealDark : 'transparent'}`,
-            borderRadius: 6, padding: '5px 8px', display: 'flex', alignItems: 'center',
+            background: editor?.isActive('bulletList') ? 'linear-gradient(135deg, #F5C869, #D97706)' : 'transparent',
+            color: editor?.isActive('bulletList') ? '#181003' : C.sub,
+            border: `1px solid ${editor?.isActive('bulletList') ? C.gold : 'transparent'}`,
+            borderRadius: 7, padding: '5px 8px', display: 'flex', alignItems: 'center',
           }}
         >
           <List size={13} />
@@ -417,10 +423,10 @@ export default function NoteEditor({
           className="hs-btn"
           title="Numbered list"
           style={{
-            background: editor?.isActive('orderedList') ? C.tealDark : 'transparent',
-            color: editor?.isActive('orderedList') ? '#fff' : C.sub,
-            border: `1px solid ${editor?.isActive('orderedList') ? C.tealDark : 'transparent'}`,
-            borderRadius: 6, padding: '5px 8px', display: 'flex', alignItems: 'center',
+            background: editor?.isActive('orderedList') ? 'linear-gradient(135deg, #F5C869, #D97706)' : 'transparent',
+            color: editor?.isActive('orderedList') ? '#181003' : C.sub,
+            border: `1px solid ${editor?.isActive('orderedList') ? C.gold : 'transparent'}`,
+            borderRadius: 7, padding: '5px 8px', display: 'flex', alignItems: 'center',
           }}
         >
           <ListOrdered size={13} />
@@ -430,19 +436,20 @@ export default function NoteEditor({
         {selectedText && (
           <>
             <div style={{ width: 1, height: 16, background: C.line, margin: '0 4px' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, animation: 'fadeIn .15s ease' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, animation: 'fadeIn .15s ease' }}>
               <button
                 onClick={() => handleCreateTask(false)}
                 className="hs-btn"
                 title={`Create task: "${selectedText.slice(0, 40)}..."`}
                 style={{
-                  background: 'rgba(232,193,112,0.15)', color: C.gold,
-                  border: `1px solid rgba(232,193,112,0.35)`, borderRadius: 6,
-                  padding: '4px 9px', fontSize: 11.5, fontWeight: 700,
+                  background: 'linear-gradient(135deg, #F5C869, #D97706)', color: '#181003',
+                  border: 'none', borderRadius: 999,
+                  padding: '4px 10px', fontSize: 11.5, fontWeight: 700,
                   display: 'flex', alignItems: 'center', gap: 4,
+                  boxShadow: '0 2px 8px rgba(245, 200, 105, 0.35)',
                 }}
               >
-                <CheckSquare size={12} />
+                <CheckSquare size={12} strokeWidth={2.6} />
                 <span>+ Task</span>
               </button>
 
@@ -451,13 +458,14 @@ export default function NoteEditor({
                 className="hs-btn"
                 title={`Create task planned for Today: "${selectedText.slice(0, 40)}..."`}
                 style={{
-                  background: 'rgba(95,203,152,0.15)', color: C.good,
-                  border: `1px solid rgba(95,203,152,0.35)`, borderRadius: 6,
-                  padding: '4px 9px', fontSize: 11.5, fontWeight: 700,
+                  background: 'linear-gradient(135deg, #10B981, #059669)', color: '#fff',
+                  border: 'none', borderRadius: 999,
+                  padding: '4px 10px', fontSize: 11.5, fontWeight: 700,
                   display: 'flex', alignItems: 'center', gap: 4,
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.35)',
                 }}
               >
-                <CalendarCheck size={12} />
+                <CalendarCheck size={12} strokeWidth={2.6} />
                 <span>+ Today</span>
               </button>
             </div>
@@ -475,49 +483,52 @@ export default function NoteEditor({
       {/* Linked Tasks list (tasks created from this note) */}
       {linkedTasks.length > 0 && (
         <div style={{
-          padding: '12px 18px', borderTop: `1px solid ${C.line}`,
+          padding: '14px 20px', borderTop: `1px solid ${C.line}`,
           background: 'rgba(255,255,255,0.015)',
         }}>
           <div style={{
             fontSize: 11, fontWeight: 700, color: C.sub, marginBottom: 8,
             letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 6,
           }}>
-            <CheckSquare size={12} />
-            <span>LINKED TASKS ({linkedTasks.length})</span>
+            <CheckSquare size={13} color={C.violet} />
+            <span style={{ color: C.violet }}>LINKED TASKS ({linkedTasks.length})</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {linkedTasks.map(task => (
               <div
                 key={task.id}
+                className="hs-row"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 8, fontSize: 13,
-                  padding: '4px 0',
+                  display: 'flex', alignItems: 'center', gap: 10, fontSize: 13,
+                  padding: '6px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)',
                 }}
               >
                 <div
                   onClick={() => onToggleTask && onToggleTask(task.id)}
                   className="hs-cell"
                   style={{
-                    width: 17, height: 17, borderRadius: 4, flexShrink: 0,
-                    background: task.done ? C.tealDark : 'rgba(255,255,255,0.08)',
-                    border: `1.4px solid ${task.done ? C.tealDark : 'rgba(255,255,255,0.25)'}`,
+                    width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                    background: task.done ? 'linear-gradient(135deg, #10B981, #059669)' : 'rgba(255,255,255,0.06)',
+                    border: `1.6px solid ${task.done ? '#10B981' : C.line}`,
+                    boxShadow: task.done ? '0 2px 8px rgba(16, 185, 129, 0.35)' : 'none',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: 'pointer',
                   }}
                 >
-                  {task.done && <Check size={11} color="#fff" strokeWidth={3.2} />}
+                  {task.done && <Check size={11} color="#fff" strokeWidth={3.4} />}
                 </div>
                 <span style={{
                   textDecoration: task.done ? 'line-through' : 'none',
                   color: task.done ? C.sub : C.ink,
-                  fontSize: 13,
+                  fontSize: 13, fontWeight: task.done ? 400 : 500,
                 }}>
                   {task.title}
                 </span>
                 {task.plannedDate && (
                   <span style={{
-                    fontSize: 10, color: C.warn, marginLeft: 'auto',
-                    background: 'rgba(232,180,84,0.12)', padding: '2px 6px', borderRadius: 4,
+                    fontSize: 10.5, color: C.gold, marginLeft: 'auto', fontWeight: 600,
+                    background: 'rgba(245, 200, 105, 0.15)', border: '1px solid rgba(245, 200, 105, 0.3)',
+                    padding: '2px 8px', borderRadius: 999,
                   }}>
                     Today
                   </span>
@@ -530,12 +541,16 @@ export default function NoteEditor({
 
       {/* Footer stats */}
       <div style={{
-        padding: '8px 18px', borderTop: `1px solid ${C.line}`,
+        padding: '10px 20px', borderTop: `1px solid ${C.line}`,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        fontSize: 11, color: C.sub, background: 'rgba(255,255,255,0.01)',
+        fontSize: 11.5, color: C.sub, background: 'rgba(255,255,255,0.01)',
+        fontFamily: "'JetBrains Mono',monospace",
       }}>
         <span>{wordCount} words · {charCount} characters</span>
-        <span>Auto-saves as you type</span>
+        <span style={{ color: C.good, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
+          Auto-saved
+        </span>
       </div>
     </div>
   );

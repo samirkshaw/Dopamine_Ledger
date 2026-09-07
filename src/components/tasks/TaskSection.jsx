@@ -7,11 +7,24 @@ export default function TaskSection({ title, tint, tasks, today, categories, onT
   const todayDate = today || todayStr();
   if (!tasks.length && !emptyText) return null;
   return (
-    <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        {icon || <div style={{ width: 8, height: 8, borderRadius: 4, background: tint }} />}
-        <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 600, fontSize: 14 }}>{title}</div>
-        <div style={{ fontSize: 11, color: C.sub, fontFamily: "'JetBrains Mono',monospace" }}>({tasks.length})</div>
+    <div className="hs-card-hover" style={{
+      background: 'rgba(21, 17, 32, 0.7)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: `1px solid ${C.line}`,
+      borderRadius: 18,
+      padding: 16,
+      marginBottom: 16,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        {icon || <div style={{ width: 8, height: 8, borderRadius: 4, background: tint, boxShadow: `0 0 8px ${tint}` }} />}
+        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14.5 }}>{title}</div>
+        <div style={{
+          fontSize: 11, color: C.sub, fontFamily: "'JetBrains Mono',monospace",
+          background: 'rgba(255,255,255,0.06)', padding: '1px 8px', borderRadius: 999,
+        }}>
+          {tasks.length}
+        </div>
         {actions}
       </div>
       {tasks.length === 0 ? (
@@ -26,47 +39,56 @@ export default function TaskSection({ title, tint, tasks, today, categories, onT
             const isPlannedToday = t.plannedDate === todayDate;
             return (
               <div key={t.id} className="hs-row" style={{
-                position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px 11px 12px',
-                borderRadius: 8, background: overdue ? 'rgba(226,112,90,0.10)' : 'rgba(255,255,255,0.035)',
+                position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px',
+                borderRadius: 12, background: overdue ? 'rgba(248, 113, 113, 0.08)' : 'rgba(255,255,255,0.03)',
                 borderLeft: `4px solid ${cat.color}`, opacity: dim ? 0.6 : 1,
+                border: `1px solid ${overdue ? 'rgba(248, 113, 113, 0.25)' : 'rgba(255,255,255,0.05)'}`,
+                borderLeftWidth: 4, borderLeftColor: cat.color,
               }}>
                 <div onClick={() => onToggle(t.id)} className="hs-cell" style={{
-                  width: 19, height: 19, borderRadius: 6, flexShrink: 0, cursor: 'pointer', marginTop: 1,
-                  background: t.done ? C.tealDark : 'rgba(255,255,255,0.05)',
-                  border: `1.6px solid ${t.done ? C.tealDark : C.line}`,
+                  width: 20, height: 20, borderRadius: 6, flexShrink: 0, cursor: 'pointer', marginTop: 1,
+                  background: t.done ? 'linear-gradient(135deg, #10B981, #059669)' : 'rgba(255,255,255,0.06)',
+                  border: `1.6px solid ${t.done ? '#10B981' : C.line}`,
+                  boxShadow: t.done ? '0 2px 8px rgba(16, 185, 129, 0.35)' : 'none',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {t.done && <Check size={12} color="#fff" strokeWidth={3.2} />}
+                  {t.done && <Check size={12} color="#fff" strokeWidth={3.4} />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                     {!t.done && (
-                      <span title={`${p.label} priority`} style={{ width: 7, height: 7, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                      <span title={`${p.label} priority`} style={{
+                        width: 7, height: 7, borderRadius: '50%', background: p.color, flexShrink: 0,
+                        boxShadow: `0 0 6px ${p.color}88`,
+                      }} />
                     )}
-                    <span style={{ fontSize: 13.5, textDecoration: t.done ? 'line-through' : 'none', color: t.done ? C.sub : C.ink, wordBreak: 'break-word' }}>
+                    <span style={{
+                      fontSize: 13.5, fontWeight: t.done ? 400 : 500,
+                      textDecoration: t.done ? 'line-through' : 'none',
+                      color: t.done ? C.sub : C.ink, wordBreak: 'break-word',
+                    }}>
                       {t.title}
                     </span>
                   </div>
                   {t.notes && (
-                    <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.notes}</div>
+                    <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.notes}</div>
                   )}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 10.5, fontFamily: "'JetBrains Mono',monospace", color: C.sub }}>
-                    <span style={{ color: cat.color, textTransform: 'uppercase', letterSpacing: '0.03em', fontWeight: 700 }}>{cat.name}</span>
-                    <span style={{ color: toneColor(due.tone), fontWeight: due.tone === 'bad' || due.tone === 'warn' ? 700 : 400 }}>{due.text}</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: C.sub }}>
+                    <span style={{ color: cat.color, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>{cat.name}</span>
+                    <span style={{ color: toneColor(due.tone), fontWeight: due.tone === 'bad' || due.tone === 'warn' ? 700 : 500 }}>{due.text}</span>
                   </div>
                 </div>
 
                 {/* Right-side action buttons */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginTop: 1 }}>
-                  {/* Plan-for-today button — only shown when the prop is provided */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, marginTop: 1 }}>
                   {onPlanToday && !t.done && (
                     isPlannedToday ? (
                       <span title="Planned for today" style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        width: 24, height: 24, borderRadius: 6,
-                        background: 'rgba(180,112,15,0.18)', color: C.tealDark,
+                        width: 26, height: 26, borderRadius: 8,
+                        background: 'rgba(245, 200, 105, 0.18)', color: C.gold,
                       }}>
-                        <CalendarCheck size={13} />
+                        <CalendarCheck size={14} />
                       </span>
                     ) : (
                       <button
@@ -75,15 +97,21 @@ export default function TaskSection({ title, tint, tasks, today, categories, onT
                         className="hs-btn"
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          width: 24, height: 24, borderRadius: 6, border: `1px solid ${C.line}`,
-                          background: 'transparent', color: C.sub, cursor: 'pointer',
+                          width: 26, height: 26, borderRadius: 8, border: `1px solid ${C.line}`,
+                          background: 'rgba(255,255,255,0.03)', color: C.sub, cursor: 'pointer',
                         }}
                       >
-                        <CalendarPlus size={13} />
+                        <CalendarPlus size={14} />
                       </button>
                     )
                   )}
-                  <button onClick={() => onEdit(t)} style={{ background: 'none', border: 'none', color: C.sub, cursor: 'pointer', display: 'flex' }}><Pencil size={12} /></button>
+                  <button onClick={() => onEdit(t)} className="hs-btn" style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 26, height: 26, borderRadius: 8, border: `1px solid ${C.line}`,
+                    background: 'rgba(255,255,255,0.03)', color: C.sub, cursor: 'pointer',
+                  }}>
+                    <Pencil size={12} />
+                  </button>
                 </div>
               </div>
             );

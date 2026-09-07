@@ -1,16 +1,17 @@
 import { useState, useEffect, useMemo, forwardRef } from 'react';
-import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut, Sun, GripVertical } from 'lucide-react';
+import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut, Sun, GripVertical, StickyNote } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 import { toDateStr, todayStr, addDaysStr, monthLabel, buildWeeks, DOW, mondayOf } from './lib/dateHelpers.js';
-import { C, WEEK_COLORS, FONT_IMPORT, DEFAULT_HABITS, DEFAULT_CATEGORIES, DEFAULT_FINANCE_CATEGORIES } from './theme.js';
+import { C, WEEK_COLORS, FONT_IMPORT, DEFAULT_HABITS, DEFAULT_CATEGORIES, DEFAULT_FINANCE_CATEGORIES, DEFAULT_NOTE_CATEGORIES } from './theme.js';
 import { signOut } from './lib/auth.js';
 import * as habitsDb from './lib/db/habits.js';
 import * as tasksDb from './lib/db/tasks.js';
 import * as financeDb from './lib/db/finance.js';
 import * as goalsDb from './lib/db/goals.js';
+import * as notesDb from './lib/db/notes.js';
 
 import StatCard from './components/common/StatCard.jsx';
 import TrendChart from './components/common/TrendChart.jsx';
@@ -23,6 +24,8 @@ import TodayView from './components/todo/TodayView.jsx';
 import FinanceTrackerView from './components/finance/FinanceTrackerView.jsx';
 import TransactionModal from './components/finance/TransactionModal.jsx';
 import FinanceCategoryPanel from './components/finance/FinanceCategoryPanel.jsx';
+import NotesView from './components/notes/NotesView.jsx';
+import NoteCategoryPanel from './components/notes/NoteCategoryPanel.jsx';
 
 function SortableHabitRow({ habit, hitsThisMonth, goalPerHabit, weeks, today, isDone, toggle, setEditHabit }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: habit.id });
@@ -84,13 +87,16 @@ export default function HabitSheet() {
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [financeCategories, setFinanceCategories] = useState([]);
-  const [page, setPage] = useState('habits'); // 'habits' | 'tasks' | 'today' | 'finance'
+  const [notes, setNotes] = useState([]);
+  const [noteCategories, setNoteCategories] = useState([]);
+  const [page, setPage] = useState('habits'); // 'habits' | 'tasks' | 'today' | 'finance' | 'notes'
   const [goals, setGoals] = useState([]);
   const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [showAdd, setShowAdd] = useState(false);
   const [editHabit, setEditHabit] = useState(null);
   const [editTask, setEditTask] = useState(null);
   const [showCatPanel, setShowCatPanel] = useState(false);
+  const [showNoteCatPanel, setShowNoteCatPanel] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
   const [taskSort, setTaskSort] = useState('deadline');
   const [editTxn, setEditTxn] = useState(null);
@@ -102,24 +108,28 @@ export default function HabitSheet() {
   useEffect(() => {
     (async () => {
       try {
-        let [h, cats, finCats] = await Promise.all([
+        let [h, cats, finCats, noteCats] = await Promise.all([
           habitsDb.listHabits(),
           tasksDb.listTaskCategories(),
           financeDb.listFinanceCategories(),
+          notesDb.listNoteCategories(),
         ]);
         // First time this user has ever logged in: seed the starter data
         // once, server-side, so it's real rows from the start.
         if (h.length === 0) h = await habitsDb.seedDefaultHabits(DEFAULT_HABITS);
         if (cats.length === 0) cats = await tasksDb.seedDefaultTaskCategories(DEFAULT_CATEGORIES);
         if (finCats.length === 0) finCats = await financeDb.seedDefaultFinanceCategories(DEFAULT_FINANCE_CATEGORIES);
+        if (noteCats.length === 0) noteCats = await notesDb.seedDefaultNoteCategories(DEFAULT_NOTE_CATEGORIES);
 
-        const [l, t, txns] = await Promise.all([
+        const [l, t, txns, n] = await Promise.all([
           habitsDb.listLogs(),
           tasksDb.listTasks(),
           financeDb.listTransactions(),
+          notesDb.listNotes(),
         ]);
         const g = await goalsDb.listGoalsForWeek(mondayOf(todayStr()));
         setHabits(h); setLogs(l); setTasks(t); setCategories(cats); setTransactions(txns); setFinanceCategories(finCats); setGoals(g);
+        setNoteCategories(noteCats); setNotes(n);
       } catch (e) {
         console.error('Failed to load data', e);
       } finally {
@@ -241,6 +251,65 @@ export default function HabitSheet() {
         setFinanceCategories(prev => prev.filter(c => c.id !== id));
         setTransactions(prev => prev.map(t => t.category === id ? { ...t, category: null } : t));
         if (finFilterCat === id) setFinFilterCat('all');
+        showToast('Category removed');
+      })
+      .catch(showError);
+  }
+
+  function addNote(note) {
+    return notesDb.createNote(note)
+      .then(row => {
+        setNotes(prev => [row, ...prev]);
+        showToast(note.noteType === 'quick' ? 'Quick note saved' : 'Note created');
+        return row;
+      })
+      .catch(showError);
+  }
+  function updateNote(id, updates) {
+    notesDb.updateNoteRow(id, updates)
+      .then(() => {
+        setNotes(prev => {
+          const updated = prev.map(x => x.id === id ? { ...x, ...updates, updatedAt: new Date().toISOString() } : x);
+          return [...updated].sort((a, b) => {
+            if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+          });
+        });
+      })
+      .catch(showError);
+  }
+  function deleteNote(id) {
+    notesDb.deleteNoteRow(id)
+      .then(() => {
+        setNotes(prev => prev.filter(x => x.id !== id));
+        showToast('Note deleted');
+      })
+      .catch(showError);
+  }
+  function promoteQuickNote(id, title, categoryId) {
+    notesDb.updateNoteRow(id, { noteType: 'note', title, categoryId })
+      .then(() => {
+        setNotes(prev => prev.map(x => x.id === id ? { ...x, noteType: 'note', title, categoryId, updatedAt: new Date().toISOString() } : x));
+        showToast('Moved to Notebook');
+      })
+      .catch(showError);
+  }
+  function addNoteCategory(cat) {
+    notesDb.createNoteCategory(cat)
+      .then(row => { setNoteCategories(prev => [...prev, row]); showToast('Category added'); })
+      .catch(showError);
+  }
+  function editNoteCategory(id, updates) {
+    notesDb.updateNoteCategoryRow(id, updates)
+      .then(() => { setNoteCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c)); showToast('Category updated'); })
+      .catch(showError);
+  }
+  function deleteNoteCategory(id) {
+    if (noteCategories.length <= 1) return;
+    notesDb.deleteNoteCategoryRow(id)
+      .then(() => {
+        setNoteCategories(prev => prev.filter(c => c.id !== id));
+        setNotes(prev => prev.map(n => n.categoryId === id ? { ...n, categoryId: null } : n));
         showToast('Category removed');
       })
       .catch(showError);
@@ -441,7 +510,9 @@ export default function HabitSheet() {
         <div className="hs-header" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14, marginBottom: 22 }}>
           <div className="hs-header-left">
             <div>
-              <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 22 }}>{page === 'habits' ? 'Habit Tracker' : page === 'tasks' ? 'Task Tracker' : page === 'today' ? 'Today' : 'Finance Tracker'}</div>
+              <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 22 }}>
+                {page === 'habits' ? 'Habit Tracker' : page === 'tasks' ? 'Task Tracker' : page === 'today' ? 'Today' : page === 'finance' ? 'Finance Tracker' : 'Notes'}
+              </div>
               <div style={{ fontSize: 12.5, color: C.sub, marginTop: 2 }}>
                 {page === 'habits'
                   ? `${habits.length} habits · ${daysInMonth} days this month`
@@ -449,7 +520,9 @@ export default function HabitSheet() {
                   ? `${tasks.filter(t => t.source !== 'quick' && !t.done).length} pending · ${tasks.filter(t => t.source !== 'quick' && t.done).length} done`
                   : page === 'today'
                   ? `${tasks.filter(t => t.plannedDate === todayStr()).length} planned · ${tasks.filter(t => t.plannedDate === todayStr() && t.done).length} done`
-                  : `${transactions.length} transactions logged`}
+                  : page === 'finance'
+                  ? `${transactions.length} transactions logged`
+                  : `${notes.filter(n => n.noteType !== 'quick').length} notebook notes · ${notes.filter(n => n.noteType === 'quick').length} quick notes`}
               </div>
             </div>
           </div>
@@ -460,6 +533,7 @@ export default function HabitSheet() {
               { key: 'tasks', label: 'Tasks', icon: <ListChecks size={14} /> },
               { key: 'today', label: 'Today', icon: <Sun size={14} /> },
               { key: 'finance', label: 'Finance', icon: <Wallet size={14} /> },
+              { key: 'notes', label: 'Notes', icon: <StickyNote size={14} /> },
             ].map(t => {
               const active = page === t.key;
               return (
@@ -715,6 +789,21 @@ export default function HabitSheet() {
           />
         )}
 
+        {page === 'notes' && (
+          <NotesView
+            notes={notes}
+            categories={noteCategories}
+            tasks={tasks}
+            onAddNote={addNote}
+            onUpdateNote={updateNote}
+            onDeleteNote={deleteNote}
+            onPromoteQuickNote={promoteQuickNote}
+            onManageCats={() => setShowNoteCatPanel(true)}
+            onAddTask={addTask}
+            onToggleTask={toggleTaskDone}
+          />
+        )}
+
         {toast && (
           <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: C.panelSolid, border: `1px solid ${C.line}`, color: C.ink, padding: '9px 18px', borderRadius: 10, fontSize: 12.5, zIndex: 60, boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>{toast}</div>
         )}
@@ -734,6 +823,9 @@ export default function HabitSheet() {
       )}
       {showFinCatPanel && (
         <FinanceCategoryPanel categories={financeCategories} onClose={() => setShowFinCatPanel(false)} onAdd={addFinanceCategory} onEdit={editFinanceCategory} onDelete={deleteFinanceCategory} />
+      )}
+      {showNoteCatPanel && (
+        <NoteCategoryPanel categories={noteCategories} onClose={() => setShowNoteCatPanel(false)} onAdd={addNoteCategory} onEdit={editNoteCategory} onDelete={deleteNoteCategory} />
       )}
     </div>
   );

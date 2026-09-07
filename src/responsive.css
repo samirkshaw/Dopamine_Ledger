@@ -33,6 +33,32 @@ html, body {
   min-width: 0;
 }
 
+/* ── Notes page: Master-detail layout (mobile-first single column) ───── */
+.notes-layout {
+  display: grid;
+  grid-template-areas: "list" "editor";
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.notes-list {
+  grid-area: list;
+  min-width: 0;
+}
+.notes-editor {
+  grid-area: editor;
+  min-width: 0;
+}
+@media (max-width: 1023px) {
+  .notes-hide-mobile {
+    display: none !important;
+  }
+  .notes-editor-fullscreen {
+    display: block !important;
+    width: 100% !important;
+  }
+}
+
+
 @media (max-width: 640px) {
   /* Page container */
   .hs-page-root {
@@ -256,4 +282,203 @@ html, body {
     margin-bottom: 0;
     z-index: 10;
   }
+
+  .notes-layout {
+    grid-template-areas: "list editor";
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .notes-list {
+    grid-area: list;
+    display: flex !important;
+  }
+
+  .notes-editor {
+    grid-area: editor;
+    display: block !important;
+    min-width: 0;
+  }
 }
+
+/* ── Markdown Preview Typography & Dark Styles ───────────────────────── */
+.notes-markdown-preview h1,
+.notes-markdown-preview h2,
+.notes-markdown-preview h3,
+.notes-markdown-preview h4 {
+  font-family: 'Poppins', sans-serif;
+  color: #F3EEE2;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+.notes-markdown-preview h1 {
+  font-size: 1.55em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+.notes-markdown-preview h2 {
+  font-size: 1.28em;
+  color: #E8C170;
+}
+.notes-markdown-preview h3 {
+  font-size: 1.1em;
+}
+.notes-markdown-preview p {
+  margin: 0.6em 0;
+  line-height: 1.68;
+}
+.notes-markdown-preview ul,
+.notes-markdown-preview ol {
+  padding-left: 22px;
+  margin: 0.6em 0;
+}
+.notes-markdown-preview li {
+  margin: 0.25em 0;
+}
+.notes-markdown-preview blockquote {
+  border-left: 3px solid #E8C170;
+  margin: 0.8em 0;
+  padding: 4px 12px;
+  color: #9C93AE;
+  background: rgba(232, 193, 112, 0.05);
+  border-radius: 0 6px 6px 0;
+}
+.notes-markdown-preview code {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #E8C170;
+}
+.notes-markdown-preview pre {
+  background: #110E18;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.notes-markdown-preview pre code {
+  background: transparent;
+  padding: 0;
+  color: #F3EEE2;
+}
+.notes-markdown-preview hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 1.2em 0;
+}
+.notes-markdown-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.8em 0;
+}
+.notes-markdown-preview th,
+.notes-markdown-preview td {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 8px 10px;
+  text-align: left;
+}
+.notes-markdown-preview th {
+  background: rgba(255, 255, 255, 0.05);
+}
+.notes-markdown-preview a {
+  color: #E8C170;
+  text-decoration: underline;
+}
+
+/* ── Tiptap WYSIWYG Editor Styles ────────────────────────────────────── */
+.tiptap-editor-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 320px;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror {
+  outline: none;
+  min-height: 320px;
+  flex: 1;
+  padding: 16px 20px;
+  color: #F3EEE2;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.68;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror p {
+  margin: 0.5em 0;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror h1 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.6em;
+  font-weight: 700;
+  color: #F3EEE2;
+  margin-top: 1.1em;
+  margin-bottom: 0.4em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror h2 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.3em;
+  font-weight: 600;
+  color: #E8C170;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror ul,
+.tiptap-editor-wrap .tiptap.ProseMirror ol {
+  padding-left: 24px;
+  margin: 0.6em 0;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror li {
+  margin: 0.3em 0;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror blockquote {
+  border-left: 3px solid #E8C170;
+  margin: 0.8em 0;
+  padding: 4px 12px;
+  color: #9C93AE;
+  background: rgba(232, 193, 112, 0.05);
+  border-radius: 0 6px 6px 0;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror code {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #E8C170;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror pre {
+  background: #110E18;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror pre code {
+  background: transparent;
+  padding: 0;
+  color: #F3EEE2;
+}
+
+.tiptap-editor-wrap .tiptap.ProseMirror ::selection {
+  background: rgba(232, 193, 112, 0.35);
+  color: #fff;
+}
+
+

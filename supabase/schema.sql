@@ -87,6 +87,31 @@ create table transactions (
   created_at timestamptz default now()
 );
 
+-- ---------- Notes ----------
+create table note_categories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null,
+  name text not null,
+  color text not null,
+  created_at timestamptz default now()
+);
+
+create table notes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null,
+  category_id uuid references note_categories(id) on delete set null,
+  note_type text not null default 'note' check (note_type in ('note','quick')),
+  title text,
+  content text not null default '',
+  pinned boolean not null default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- migration 007: link tasks created from notes
+alter table tasks add column source_note_id uuid references notes(id) on delete set null;
+
+
 -- ---------- Row Level Security ----------
 -- Every table: a user can only ever see/write/delete their own rows.
 alter table habits enable row level security;
@@ -96,12 +121,14 @@ alter table goals enable row level security;
 alter table tasks enable row level security;
 alter table finance_categories enable row level security;
 alter table transactions enable row level security;
+alter table note_categories enable row level security;
+alter table notes enable row level security;
 
 do $$
 declare
   t text;
 begin
-  foreach t in array array['habits','habit_logs','task_categories','goals','tasks','finance_categories','transactions']
+  foreach t in array array['habits','habit_logs','task_categories','goals','tasks','finance_categories','transactions','note_categories','notes']
   loop
     execute format('create policy "select own" on %I for select using (auth.uid() = user_id)', t);
     execute format('create policy "insert own" on %I for insert with check (auth.uid() = user_id)', t);
@@ -116,7 +143,23 @@ create index goals_user_week_idx on goals (user_id, week_start);  -- migration 0
 create index tasks_user_done_idx on tasks (user_id, done);
 create index tasks_user_planned_idx on tasks (user_id, planned_date);  -- migration 002
 create index transactions_user_date_idx on transactions (user_id, txn_date);
+create index notes_user_type_idx on notes (user_id, note_type);       -- migration 006
+create index notes_user_category_idx on notes (user_id, category_id); -- migration 006
+
+-- ---------- Triggers ----------
+create or replace function set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger notes_updated_at
+  before update on notes
+  for each row execute function set_updated_at();
 
 -- No anonymous auth needed here — this version uses real email/password
 -- sign-up via Supabase Auth. No dashboard toggles required beyond the
 -- defaults (email auth is on by default in every new Supabase project).
+

@@ -66,3 +66,10 @@ export const DEFAULT_FINANCE_CATEGORIES = [
   { id: 'entertainment', name: 'Entertainment', color: '#ABA599', kind: 'expense' },
   { id: 'other-expense', name: 'Other', color: '#7FBF77', kind: 'expense' },
 ];
+
+export const DEFAULT_NOTE_CATEGORIES = [
+  { id: 'lecture', name: 'Lecture Notes', color: '#6FA8D6' },
+  { id: 'personal', name: 'Personal', color: '#5FBFA0' },
+  { id: 'ideas', name: 'Ideas', color: '#E8C170' },
+];
+

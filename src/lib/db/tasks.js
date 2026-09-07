@@ -45,6 +45,7 @@ function fromRow(t) {
     category: t.category_id, notes: t.notes, done: t.done, doneAt: t.done_at,
     plannedDate: t.planned_date, source: t.source, createdAt: t.created_at,
     goalId: t.goal_id, goalContribution: t.goal_contribution, scheduledTime: t.scheduled_time,
+    sourceNoteId: t.source_note_id,
   };
 }
 
@@ -57,17 +58,19 @@ export async function listTasks() {
 export async function createTaskRow(task) {
   const user_id = await uid();
   const { data, error } = await supabase.from('tasks').insert({
-    user_id, title: task.title, due_date: task.due || null, priority: task.priority,
+    user_id, title: task.title, due_date: task.due || null, priority: task.priority || 'med',
     category_id: task.category || null, notes: task.notes || null,
     planned_date: task.plannedDate || null,
     source: task.source || 'task',
     goal_id: task.goalId || null,
     goal_contribution: task.goalContribution || 1,
     scheduled_time: task.scheduledTime || null,
+    source_note_id: task.sourceNoteId || null,
   }).select().single();
   if (error) throw error;
   return fromRow(data);
 }
+
 
 export async function updateTaskRow(id, task) {
   const { error } = await supabase.from('tasks').update({

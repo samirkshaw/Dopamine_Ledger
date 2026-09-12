@@ -245,7 +245,7 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
       <div className="today-main">
 
       {/* ── Stats row ─────────────────────────────────────────────────────── */}
-      <div className="hs-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 10, marginBottom: 18 }}>
+      <div className="hs-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 18 }}>
         <StatCard label="Planned today" value={plannedCount} pct={100} flat />
         <StatCard label="Done today" value={doneCount} pct={100} flat />
         <StatCard label="Completion" value={`${completionPct}%`} pct={completionPct} />
@@ -300,7 +300,7 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
       )}
 
       {/* ── Quick-add bar ─────────────────────────────────────────────────── */}
-      <div className="hs-card-hover" style={{
+      <div className="hs-card-hover hs-quick-add-bar" style={{
         background: 'rgba(21, 17, 32, 0.7)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',

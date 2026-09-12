@@ -46,6 +46,7 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
       border: `1px solid ${C.line}`,
       borderRadius: 18,
       padding: 16,
+      boxSizing: 'border-box',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: goals.length > 0 ? 14 : 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -86,10 +87,11 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
                 padding: '10px 12px', borderRadius: 12,
                 background: 'rgba(255,255,255,0.03)',
                 border: `1px solid ${isMet ? 'rgba(52, 211, 153, 0.3)' : 'rgba(255,255,255,0.05)'}`,
+                boxSizing: 'border-box',
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.title}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, wordBreak: 'break-word' }}>{g.title}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ flex: 1, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>

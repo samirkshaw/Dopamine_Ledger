@@ -11,6 +11,7 @@ export default function StatCard({ label, value, pct, flat, icon, tone }) {
       padding: '13px 15px',
       position: 'relative',
       overflow: 'hidden',
+      boxSizing: 'border-box',
     }}>
       {tone && (
         <div style={{

@@ -236,6 +236,36 @@ input:focus, select:focus, textarea:focus {
     margin-bottom: 14px !important;
   }
 
+  .hs-stat-grid > * {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+  }
+
+  /* Weekly Goals cards — wrap title, constrain progress bar */
+  .today-goals {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .today-goals .hs-row {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+  }
+
+  /* Quick-add bar — stack all elements vertically */
+  .hs-quick-add-bar {
+    flex-direction: column !important;
+  }
+
+  .hs-quick-add-bar > input,
+  .hs-quick-add-bar > select,
+  .hs-quick-add-bar > button {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+  }
+
   .hs-stat-grid > *:last-child:nth-child(odd) {
     grid-column: span 2;
   }
@@ -307,14 +337,30 @@ input:focus, select:focus, textarea:focus {
     gap: 8px !important;
   }
 
+  .hs-inline-add-grid > input,
+  .hs-inline-add-grid > select,
+  .hs-inline-add-grid > textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+  }
+
   .hs-inline-add-row {
     display: flex !important;
+    flex-wrap: wrap !important;
     gap: 8px !important;
     width: 100% !important;
+    flex: none !important;
   }
 
   .hs-inline-add-row > * {
-    flex: 1 1 0 !important;
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .hs-inline-add-row > button {
+    flex: 1 1 auto !important;
   }
 
   .hs-touch-target {

@@ -12,6 +12,8 @@ create table habits (
   icon text not null default '🎯',
   sort_order int not null default 0,
   weight numeric not null default 1 check (weight > 0),  -- migration 004
+  target_amount numeric check (target_amount > 0),       -- migration 008
+  unit text,                                              -- migration 008
   created_at timestamptz default now(),
   unique (user_id, name)  -- migration 001
 );
@@ -21,6 +23,7 @@ create table habit_logs (
   user_id uuid references auth.users not null,
   habit_id uuid references habits(id) on delete cascade not null,
   log_date date not null,
+  amount numeric not null default 1 check (amount > 0),   -- migration 008
   created_at timestamptz default now(),
   unique (habit_id, log_date)
 );

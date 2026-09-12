@@ -6,10 +6,18 @@ export default function HabitModal({ habit, onClose, onSave, onDelete }) {
   const [name, setName] = useState(habit?.name || '');
   const [icon, setIcon] = useState(habit?.icon || '🎯');
   const [weight, setWeight] = useState(habit?.weight ?? 1);
+  const [isQuantified, setIsQuantified] = useState(habit?.targetAmount != null);
+  const [targetAmount, setTargetAmount] = useState(habit?.targetAmount != null ? String(habit.targetAmount) : '');
+  const [unit, setUnit] = useState(habit?.unit || '');
+
   function submit() {
     if (!name.trim()) return;
     const w = Math.max(0.1, parseFloat(weight) || 1);
-    onSave({ id: habit?.id, name: name.trim(), icon, weight: w });
+    const parsedTarget = parseFloat(targetAmount);
+    if (isQuantified && (!parsedTarget || parsedTarget <= 0)) return;
+    const target = isQuantified && parsedTarget > 0 ? parsedTarget : null;
+    const u = isQuantified && target ? (unit.trim() || null) : null;
+    onSave({ id: habit?.id, name: name.trim(), icon, weight: w, targetAmount: target, unit: u });
   }
   return (
     <div className="hs-modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(6,5,10,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, animation: 'fadeIn .15s ease' }} onClick={onClose}>
@@ -29,7 +37,46 @@ export default function HabitModal({ habit, onClose, onSave, onDelete }) {
         </div>
         <label style={{ fontSize: 11.5, color: C.sub }}>Weight</label>
         <div style={{ fontSize: 10, color: C.sub, marginTop: 2, marginBottom: 6 }}>How much should this count toward daily progress?</div>
-        <input type="number" value={weight} onChange={e => setWeight(e.target.value)} min="0.1" step="0.1" style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`, borderRadius: 10, padding: '9px 11px', color: C.ink, fontSize: 13, margin: '0 0 18px', outline: 'none' }} />
+        <input type="number" value={weight} onChange={e => setWeight(e.target.value)} min="0.1" step="0.1" style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`, borderRadius: 10, padding: '9px 11px', color: C.ink, fontSize: 13, margin: '0 0 14px', outline: 'none' }} />
+
+        <div style={{ margin: '0 0 18px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 500, color: C.ink }}>
+            <input
+              type="checkbox"
+              checked={isQuantified}
+              onChange={e => setIsQuantified(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: C.teal, cursor: 'pointer' }}
+            />
+            Track as a number instead of a checkbox
+          </label>
+          {isQuantified && (
+            <div style={{ marginTop: 10, padding: 12, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.line}`, display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: C.sub }}>Target amount</label>
+                <input
+                  type="number"
+                  min="0.1"
+                  step="any"
+                  value={targetAmount}
+                  onChange={e => setTargetAmount(e.target.value)}
+                  placeholder="e.g. 5"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`, borderRadius: 8, padding: '8px 10px', color: C.ink, fontSize: 13, marginTop: 4, outline: 'none' }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: C.sub }}>Unit (optional)</label>
+                <input
+                  type="text"
+                  value={unit}
+                  onChange={e => setUnit(e.target.value)}
+                  placeholder="e.g. hrs, pages"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`, borderRadius: 8, padding: '8px 10px', color: C.ink, fontSize: 13, marginTop: 4, outline: 'none' }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
         <button onClick={submit} className="hs-btn" style={{ width: '100%', padding: '11px', borderRadius: 11, border: 'none', background: C.tealDark, color: '#fff', fontWeight: 700, fontSize: 13.5, marginBottom: onDelete ? 8 : 0 }}>{habit ? 'Save Changes' : 'Add Habit'}</button>
         {onDelete && (
           <button onClick={onDelete} className="hs-btn" style={{ width: '100%', padding: '9px', borderRadius: 11, border: `1px solid ${C.bad}66`, background: 'transparent', color: C.bad, fontSize: 12.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Trash2 size={12} /> Remove habit</button>

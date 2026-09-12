@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, forwardRef } from 'react';
-import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut, Sun, GripVertical, StickyNote, Sparkles } from 'lucide-react';
+import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut, Sun, GripVertical, StickyNote, Sparkles, X } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -27,7 +27,7 @@ import FinanceCategoryPanel from './components/finance/FinanceCategoryPanel.jsx'
 import NotesView from './components/notes/NotesView.jsx';
 import NoteCategoryPanel from './components/notes/NoteCategoryPanel.jsx';
 
-function SortableHabitRow({ habit, hitsThisMonth, goalPerHabit, weeks, today, isDone, toggle, setEditHabit }) {
+function SortableHabitRow({ habit, hitsThisMonth, goalPerHabit, weeks, today, isDone, toggle, setEditHabit, getLogAmount, onDirectEdit }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: habit.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -36,6 +36,9 @@ function SortableHabitRow({ habit, hitsThisMonth, goalPerHabit, weeks, today, is
     display: 'flex', alignItems: 'center', borderTop: `1px solid ${C.line}`,
   };
   const h = habit;
+  const isQuant = !!h.targetAmount;
+  const target = h.targetAmount || 1;
+
   return (
     <div ref={setNodeRef} style={style} className="hs-row">
       <div className="hs-grid-sticky-col" style={{ width: 220, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '8px 8px 8px 6px', background: '#130F1C', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
@@ -44,6 +47,11 @@ function SortableHabitRow({ habit, hitsThisMonth, goalPerHabit, weeks, today, is
         </button>
         <span style={{ fontSize: 16 }}>{h.icon}</span>
         <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: C.ink }}>{h.name}</span>
+        {isQuant && (
+          <span style={{ fontSize: 10, color: C.sub, background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: 5, flexShrink: 0, fontFamily: "'JetBrains Mono',monospace" }}>
+            {target}{h.unit ? ` ${h.unit}` : ''}
+          </span>
+        )}
         <button onClick={() => setEditHabit(h)} className="hs-btn" style={{ background: 'none', border: 'none', color: C.sub, cursor: 'pointer', marginLeft: 'auto', flexShrink: 0, padding: 4, display: 'flex' }}><Pencil size={11} /></button>
       </div>
       <div style={{ width: 50, flexShrink: 0, textAlign: 'center', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: C.sub, fontWeight: 500 }}>
@@ -56,20 +64,58 @@ function SortableHabitRow({ habit, hitsThisMonth, goalPerHabit, weeks, today, is
             {w.map((d, di) => {
               if (!d) return <div key={di} style={{ flex: 1, padding: '5px 0', background: 'rgba(255,255,255,0.015)' }} />;
               const done = isDone(h.id, d);
+              const amount = getLogAmount ? getLogAmount(h.id, d) : (done ? 1 : 0);
               const future = d > today;
               const isToday = d === today;
+              const fillPct = isQuant ? Math.min(100, Math.round((amount / target) * 100)) : (done ? 100 : 0);
+
               return (
-                <div key={di} style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '5px 0', background: isToday ? 'rgba(245, 166, 35, 0.18)' : col.bg }}>
-                  <div className={future ? '' : 'hs-cell'} onClick={() => !future && toggle(h.id, d)} style={{
-                    width: 18, height: 18, borderRadius: 5,
-                    background: done ? 'linear-gradient(135deg, #10B981, #059669)' : 'rgba(255,255,255,0.06)',
-                    border: `${isToday ? 2 : 1.4}px solid ${done ? '#10B981' : isToday ? C.warn : 'rgba(255,255,255,0.18)'}`,
-                    boxShadow: done ? '0 2px 8px rgba(16,185,129,0.35)' : 'none',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    opacity: future ? 0.3 : 1,
-                  }}>
-                    {done && <Check size={11} color="#fff" strokeWidth={3.4} />}
+                <div key={di} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, padding: '5px 0', background: isToday ? 'rgba(245, 166, 35, 0.18)' : col.bg }}>
+                  <div
+                    className={future ? '' : 'hs-cell'}
+                    onClick={() => !future && toggle(h.id, d)}
+                    title={isQuant ? `${h.name}: ${amount}/${target}${h.unit ? ' ' + h.unit : ''}` : undefined}
+                    style={{
+                      width: 18, height: 18, borderRadius: 5, position: 'relative', overflow: 'hidden',
+                      background: done ? 'linear-gradient(135deg, #10B981, #059669)' : 'rgba(255,255,255,0.06)',
+                      border: `${isToday ? 2 : 1.4}px solid ${done ? '#10B981' : isToday ? C.warn : amount > 0 ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255,255,255,0.18)'}`,
+                      boxShadow: done ? '0 2px 8px rgba(16,185,129,0.35)' : 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      opacity: future ? 0.3 : 1,
+                    }}
+                  >
+                    {isQuant && !done && amount > 0 && (
+                      <div style={{
+                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                        height: `${fillPct}%`, background: 'rgba(16, 185, 129, 0.45)',
+                      }} />
+                    )}
+                    {done ? (
+                      <Check size={11} color="#fff" strokeWidth={3.4} style={{ position: 'relative', zIndex: 1 }} />
+                    ) : (isQuant && amount > 0) ? (
+                      <span style={{ position: 'relative', zIndex: 1, fontSize: 7.5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: C.ink, letterSpacing: '-0.06em', lineHeight: 1 }}>
+                        {amount > 9 || target > 9 ? `${amount}` : `${amount}/${target}`}
+                      </span>
+                    ) : null}
                   </div>
+                  {isQuant && !future && onDirectEdit && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDirectEdit({ habitId: h.id, date: d, habitName: h.name, unit: h.unit, currentAmount: amount, targetAmount: target });
+                      }}
+                      className="hs-btn"
+                      title="Set exact amount"
+                      style={{
+                        background: 'none', border: 'none', color: C.subMuted || C.sub,
+                        cursor: 'pointer', padding: 0, width: 8, height: 18,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        opacity: amount > 0 ? 0.9 : 0.4,
+                      }}
+                    >
+                      <Pencil size={7} />
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -105,6 +151,7 @@ export default function HabitSheet() {
   const [finFilterCat, setFinFilterCat] = useState('all');
   const [finTypeFilter, setFinTypeFilter] = useState('all');
   const [toast, setToast] = useState(null);
+  const [directEdit, setDirectEdit] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -316,18 +363,54 @@ export default function HabitSheet() {
       .catch(showError);
   }
 
+  function getLogAmount(habitId, dateStr) {
+    return Number((logs[dateStr] || {})[habitId]) || 0;
+  }
+
+  function isDone(habitId, dateStr) {
+    const amt = getLogAmount(habitId, dateStr);
+    const habit = habits.find(h => h.id === habitId);
+    const target = habit?.targetAmount || 1;
+    return amt >= target;
+  }
+
   function toggle(habitId, dateStr) {
     if (dateStr > todayStr()) return;
-    const wasDone = !!(logs[dateStr] || {})[habitId];
-    const next = { ...logs, [dateStr]: { ...(logs[dateStr] || {}) } };
-    next[dateStr][habitId] = !wasDone;
-    setLogs(next); // optimistic — feels instant on every tap
-    habitsDb.setLogDone(habitId, dateStr, !wasDone).catch(e => {
-      setLogs(logs); // roll back on failure
+    const habit = habits.find(h => h.id === habitId);
+    const target = habit?.targetAmount || 1;
+    let nextAmount = 0;
+    setLogs(prev => {
+      const current = Number((prev[dateStr] || {})[habitId]) || 0;
+      nextAmount = current >= target ? 0 : current + 1;
+      const next = { ...prev, [dateStr]: { ...(prev[dateStr] || {}) } };
+      if (nextAmount <= 0) {
+        delete next[dateStr][habitId];
+      } else {
+        next[dateStr][habitId] = nextAmount;
+      }
+      return next;
+    });
+    habitsDb.setLogAmount(habitId, dateStr, nextAmount).catch(e => {
       showError(e);
     });
   }
-  function isDone(habitId, dateStr) { return !!(logs[dateStr] || {})[habitId]; }
+
+  function setHabitLogAmount(habitId, dateStr, exactAmount) {
+    if (dateStr > todayStr()) return;
+    const amt = Math.max(0, Number(exactAmount) || 0);
+    setLogs(prev => {
+      const next = { ...prev, [dateStr]: { ...(prev[dateStr] || {}) } };
+      if (amt <= 0) {
+        delete next[dateStr][habitId];
+      } else {
+        next[dateStr][habitId] = amt;
+      }
+      return next;
+    });
+    habitsDb.setLogAmount(habitId, dateStr, amt).catch(e => {
+      showError(e);
+    });
+  }
 
   function addHabit(h) {
     habitsDb.createHabit(h)
@@ -374,7 +457,12 @@ export default function HabitSheet() {
 
   // Weighted count — used for percentage calculations
   function dayCompletedCount(dateStr) {
-    return habits.reduce((s, h) => s + (isDone(h.id, dateStr) ? (h.weight || 1) : 0), 0);
+    return habits.reduce((s, h) => {
+      const amt = getLogAmount(h.id, dateStr);
+      const target = h.targetAmount || 1;
+      const progress = Math.min(amt / target, 1);
+      return s + (h.weight || 1) * progress;
+    }, 0);
   }
   // Raw count — used for display text ("3/10" style)
   function dayCompletedRawCount(dateStr) {
@@ -602,17 +690,24 @@ export default function HabitSheet() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                 {habits.map(h => {
                   const done = isDone(h.id, today);
+                  const isQuant = !!h.targetAmount;
+                  const amt = getLogAmount(h.id, today);
                   return (
                     <button key={h.id} onClick={() => toggle(h.id, today)} className="hs-btn" style={{
                       display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999,
-                      background: done ? 'linear-gradient(135deg, #10B981, #059669)' : 'rgba(255,255,255,0.05)',
+                      background: done ? 'linear-gradient(135deg, #10B981, #059669)' : amt > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
                       color: done ? '#fff' : C.ink,
-                      border: `1.4px solid ${done ? '#10B981' : C.line}`,
+                      border: `1.4px solid ${done ? '#10B981' : amt > 0 ? 'rgba(16, 185, 129, 0.4)' : C.line}`,
                       fontSize: 12.5, fontWeight: done ? 700 : 500,
                       boxShadow: done ? '0 2px 10px rgba(16, 185, 129, 0.35)' : 'none',
                     }}>
                       <span>{h.icon}</span>
                       <span>{h.name}</span>
+                      {isQuant && (
+                        <span style={{ fontSize: 11, color: done ? '#fff' : C.sub, fontFamily: "'JetBrains Mono',monospace", marginLeft: 1 }}>
+                          {amt}/{h.targetAmount}{h.unit ? ` ${h.unit}` : ''}
+                        </span>
+                      )}
                       {done && <Check size={12} strokeWidth={3.2} />}
                     </button>
                   );
@@ -678,7 +773,8 @@ export default function HabitSheet() {
                   const hitsThisMonth = allDatesInMonth.reduce((s, d) => s + (isDone(h.id, d) ? 1 : 0), 0);
                   return (
                     <SortableHabitRow key={h.id} habit={h} hitsThisMonth={hitsThisMonth} goalPerHabit={goalPerHabit}
-                      weeks={weeks} today={today} isDone={isDone} toggle={toggle} setEditHabit={setEditHabit} />
+                      weeks={weeks} today={today} isDone={isDone} toggle={toggle} setEditHabit={setEditHabit}
+                      getLogAmount={getLogAmount} onDirectEdit={setDirectEdit} />
                   );
                 })}
               </SortableContext>
@@ -744,9 +840,14 @@ export default function HabitSheet() {
             {habitPerformance.map((h, i) => (
               <div key={h.id} className="hs-row" style={{ display: 'flex', alignItems: 'center', padding: '10px 4px', borderBottom: `1px solid ${C.line}`, borderRadius: 8 }}>
                 <div style={{ width: 26, fontSize: 11, color: C.sub, fontWeight: 600 }}>{i + 1}</div>
-                <div className="hs-perf-habit-col" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, overflow: 'hidden' }}>
+                <div className="hs-perf-habit-col" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
                   <span style={{ fontSize: 15 }}>{h.icon}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: C.ink }}>{h.name}</span>
+                  {h.targetAmount && (
+                    <span style={{ fontSize: 10, color: C.sub, background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: 5, flexShrink: 0, fontFamily: "'JetBrains Mono',monospace" }}>
+                      {h.targetAmount}{h.unit ? ` ${h.unit}` : ''}
+                    </span>
+                  )}
                 </div>
                 <div style={{ width: 130, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
                   <div style={{ width: 60, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
@@ -825,6 +926,92 @@ export default function HabitSheet() {
             onAddTask={addTask}
             onToggleTask={toggleTaskDone}
           />
+        )}
+
+        {directEdit && (
+          <div
+            className="hs-modal-overlay"
+            style={{ position: 'fixed', inset: 0, background: 'rgba(6,5,10,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, animation: 'fadeIn .1s ease' }}
+            onClick={() => setDirectEdit(null)}
+          >
+            <div
+              className="hs-card-hover"
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: '#18141F', border: `1px solid ${C.line}`, borderRadius: 14,
+                padding: '16px 18px', width: '90%', maxWidth: 280, boxShadow: '0 10px 30px rgba(0,0,0,0.7)',
+                display: 'flex', flexDirection: 'column', gap: 12, animation: 'slideUp .15s ease',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>
+                  {directEdit.habitName}
+                </div>
+                <button onClick={() => setDirectEdit(null)} style={{ background: 'none', border: 'none', color: C.sub, cursor: 'pointer', padding: 2 }}>
+                  <X size={15} />
+                </button>
+              </div>
+              <div style={{ fontSize: 11, color: C.sub }}>
+                {directEdit.date} · Target: {directEdit.targetAmount}{directEdit.unit ? ` ${directEdit.unit}` : ''}
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  autoFocus
+                  defaultValue={directEdit.currentAmount || ''}
+                  placeholder="0"
+                  id="direct-entry-input"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const val = parseFloat(e.target.value) || 0;
+                      setHabitLogAmount(directEdit.habitId, directEdit.date, val);
+                      setDirectEdit(null);
+                    } else if (e.key === 'Escape') {
+                      setDirectEdit(null);
+                    }
+                  }}
+                  style={{
+                    flex: 1, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`,
+                    borderRadius: 8, padding: '7px 10px', color: C.ink, fontSize: 13.5, outline: 'none',
+                    fontFamily: "'JetBrains Mono',monospace",
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const inputEl = document.getElementById('direct-entry-input');
+                    const val = inputEl ? parseFloat(inputEl.value) || 0 : 0;
+                    setHabitLogAmount(directEdit.habitId, directEdit.date, val);
+                    setDirectEdit(null);
+                  }}
+                  className="hs-btn"
+                  style={{
+                    background: C.tealDark, border: 'none', borderRadius: 8, padding: '8px 14px',
+                    color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  Save
+                </button>
+                {directEdit.currentAmount > 0 && (
+                  <button
+                    onClick={() => {
+                      setHabitLogAmount(directEdit.habitId, directEdit.date, 0);
+                      setDirectEdit(null);
+                    }}
+                    className="hs-btn"
+                    title="Clear log"
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: 8, padding: '8px 10px', color: C.bad, fontSize: 12, cursor: 'pointer',
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {toast && (

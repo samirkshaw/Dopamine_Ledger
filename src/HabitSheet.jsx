@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, forwardRef } from 'react';
+import { useState, useEffect, useMemo, useRef, forwardRef } from 'react';
 import { Check, Plus, ChevronLeft, ChevronRight, Flame, ListChecks, Loader2, Pencil, Wallet, LogOut, Sun, GripVertical, StickyNote, Sparkles, X } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
@@ -130,6 +130,11 @@ export default function HabitSheet() {
   const [loading, setLoading] = useState(true);
   const [habits, setHabits] = useState([]);
   const [logs, setLogs] = useState({});
+  const logsRef = useRef(logs);
+  useEffect(() => {
+    logsRef.current = logs;
+  }, [logs]);
+  const pendingSavesRef = useRef(new Map());
   const [tasks, setTasks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -176,6 +181,7 @@ export default function HabitSheet() {
           notesDb.listNotes(),
         ]);
         const g = await goalsDb.listGoalsForWeek(mondayOf(todayStr()));
+        logsRef.current = l;
         setHabits(h); setLogs(l); setTasks(t); setCategories(cats); setTransactions(txns); setFinanceCategories(finCats); setGoals(g);
         setNoteCategories(noteCats); setNotes(n);
       } catch (e) {
@@ -374,42 +380,78 @@ export default function HabitSheet() {
     return amt >= target;
   }
 
+  function saveHabitLogAmount(habitId, dateStr, amount) {
+    const key = `${habitId}:${dateStr}`;
+    const pending = pendingSavesRef.current;
+    if (pending.has(key)) {
+      pending.set(key, { ...pending.get(key), nextAmount: amount });
+      return;
+    }
+
+    pending.set(key, { inFlight: true, nextAmount: null });
+
+    const executeSave = async (amtToSave) => {
+      try {
+        await habitsDb.setLogAmount(habitId, dateStr, amtToSave);
+      } catch (e) {
+        showError(e);
+      } finally {
+        const state = pending.get(key);
+        if (state && state.nextAmount !== null) {
+          const queuedAmount = state.nextAmount;
+          pending.set(key, { inFlight: true, nextAmount: null });
+          executeSave(queuedAmount);
+        } else {
+          pending.delete(key);
+        }
+      }
+    };
+
+    executeSave(amount);
+  }
+
   function toggle(habitId, dateStr) {
     if (dateStr > todayStr()) return;
     const habit = habits.find(h => h.id === habitId);
     const target = habit?.targetAmount || 1;
-    let nextAmount = 0;
-    setLogs(prev => {
-      const current = Number((prev[dateStr] || {})[habitId]) || 0;
-      nextAmount = current >= target ? 0 : current + 1;
-      const next = { ...prev, [dateStr]: { ...(prev[dateStr] || {}) } };
-      if (nextAmount <= 0) {
-        delete next[dateStr][habitId];
-      } else {
-        next[dateStr][habitId] = nextAmount;
-      }
-      return next;
-    });
-    habitsDb.setLogAmount(habitId, dateStr, nextAmount).catch(e => {
-      showError(e);
-    });
+
+    // Read current amount synchronously from logsRef.current to avoid stale closures during rapid taps
+    const currentLogs = logsRef.current || {};
+    const current = Number((currentLogs[dateStr] || {})[habitId]) || 0;
+
+    // Wrap to 0 only after reaching or exceeding target
+    const nextAmount = current >= target ? 0 : current + 1;
+
+    const nextDayLogs = { ...(currentLogs[dateStr] || {}) };
+    if (nextAmount <= 0) {
+      delete nextDayLogs[habitId];
+    } else {
+      nextDayLogs[habitId] = nextAmount;
+    }
+    const nextLogs = { ...currentLogs, [dateStr]: nextDayLogs };
+
+    // Immediately update logsRef.current synchronously so any rapid subsequent tap reads this new amount
+    logsRef.current = nextLogs;
+    setLogs(nextLogs);
+
+    // Persist via serialized queue to guarantee order and prevent stale overwrites
+    saveHabitLogAmount(habitId, dateStr, nextAmount);
   }
 
   function setHabitLogAmount(habitId, dateStr, exactAmount) {
     if (dateStr > todayStr()) return;
     const amt = Math.max(0, Number(exactAmount) || 0);
-    setLogs(prev => {
-      const next = { ...prev, [dateStr]: { ...(prev[dateStr] || {}) } };
-      if (amt <= 0) {
-        delete next[dateStr][habitId];
-      } else {
-        next[dateStr][habitId] = amt;
-      }
-      return next;
-    });
-    habitsDb.setLogAmount(habitId, dateStr, amt).catch(e => {
-      showError(e);
-    });
+    const currentLogs = logsRef.current || {};
+    const nextDayLogs = { ...(currentLogs[dateStr] || {}) };
+    if (amt <= 0) {
+      delete nextDayLogs[habitId];
+    } else {
+      nextDayLogs[habitId] = amt;
+    }
+    const nextLogs = { ...currentLogs, [dateStr]: nextDayLogs };
+    logsRef.current = nextLogs;
+    setLogs(nextLogs);
+    saveHabitLogAmount(habitId, dateStr, amt);
   }
 
   function addHabit(h) {

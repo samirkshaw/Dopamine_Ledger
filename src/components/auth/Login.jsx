@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { C, FONT_IMPORT } from '../../theme.js';
 import { signIn, signUp } from '../../lib/auth.js';
+import BrandLogo from '../common/BrandLogo.jsx';
 
 export default function Login() {
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
@@ -37,9 +38,14 @@ export default function Login() {
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter',sans-serif", color: C.ink, padding: 20 }}>
       <style>{FONT_IMPORT}</style>
       <form onSubmit={submit} style={{ width: '100%', maxWidth: 360, background: C.panelSolid, border: `1px solid ${C.line}`, borderRadius: 18, padding: 28 }}>
-        <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 20, marginBottom: 4 }}>Dopamine Ledger</div>
-        <div style={{ fontSize: 12.5, color: C.sub, marginBottom: 22 }}>
-          {mode === 'signin' ? 'Sign in to your ledger' : 'Create your ledger account'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <BrandLogo size={42} rounded={12} />
+          <div>
+            <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 20 }}>Dopamine Ledger</div>
+            <div style={{ fontSize: 12, color: C.sub }}>
+              {mode === 'signin' ? 'Sign in to your ledger' : 'Create your ledger account'}
+            </div>
+          </div>
         </div>
 
         <label style={{ fontSize: 11.5, color: C.sub }}>Email</label>

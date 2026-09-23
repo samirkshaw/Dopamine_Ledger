@@ -16,6 +16,7 @@ import * as notesDb from './lib/db/notes.js';
 import StatCard from './components/common/StatCard.jsx';
 import TrendChart from './components/common/TrendChart.jsx';
 import Donut from './components/common/Donut.jsx';
+import BrandLogo from './components/common/BrandLogo.jsx';
 import HabitModal from './components/habits/HabitModal.jsx';
 import TaskTrackerView from './components/tasks/TaskTrackerView.jsx';
 import TaskModal from './components/tasks/TaskModal.jsx';
@@ -641,14 +642,7 @@ export default function HabitSheet() {
         <div className="hs-header" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14, marginBottom: 24 }}>
           <div className="hs-header-left">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: 'linear-gradient(135deg, #F5C869 0%, #D97706 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 16px rgba(245, 200, 105, 0.35)', flexShrink: 0,
-              }}>
-                <Sparkles size={21} color="#150F02" strokeWidth={2.5} />
-              </div>
+              <BrandLogo size={42} rounded={12} />
               <div>
                 <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span>Dopamine Ledger</span>

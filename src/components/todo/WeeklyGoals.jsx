@@ -1,11 +1,21 @@
-import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Target } from 'lucide-react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import { Plus, Pencil, Trash2, Target, ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { C } from '../../theme.js';
+import { mondayOf, todayStr } from '../../lib/dateHelpers.js';
+import { listGoalHistory } from '../../lib/db/goals.js';
 import GoalModal from './GoalModal.jsx';
 
 export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onDeleteGoal }) {
   const [showModal, setShowModal] = useState(false);
   const [editGoal, setEditGoal] = useState(null);
+
+  // ── History state (lazy-loaded) ─────────────────────────────────────────────
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyData, setHistoryData] = useState(null);   // null = never fetched
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
+  const historyOffsetRef = useRef(0);
+  const PAGE_SIZE = 10;
 
   // Progress for each goal — computed from the full tasks array
   const goalProgress = useMemo(() => {
@@ -20,6 +30,79 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
     }
     return map;
   }, [goals, tasks]);
+
+  // ── History helpers ──────────────────────────────────────────────────────────
+
+  const fetchHistory = useCallback(async (append = false) => {
+    setHistoryLoading(true);
+    try {
+      const currentWeekStart = mondayOf(todayStr());
+      const offset = append ? historyOffsetRef.current : 0;
+      const result = await listGoalHistory(currentWeekStart, PAGE_SIZE, offset);
+
+      const processed = result.weeks.map(w => {
+        let targetSum = 0;
+        let completedSum = 0;
+        for (const g of w.goals) {
+          targetSum += g.targetCount;
+          // Sum contributions from done tasks for this goal
+          let progress = 0;
+          for (const t of w.doneTasks) {
+            if (t.goalId === g.id) {
+              progress += (t.goalContribution || 1);
+            }
+          }
+          // Cap at goal's target
+          completedSum += Math.min(progress, g.targetCount);
+        }
+        const completionRate = targetSum > 0 ? Math.round((completedSum / targetSum) * 100) : null;
+        return { weekStart: w.weekStart, goals: w.goals, targetSum, completedSum, completionRate };
+      });
+
+      if (append) {
+        setHistoryData(prev => [...(prev || []), ...processed]);
+      } else {
+        setHistoryData(processed);
+      }
+      historyOffsetRef.current = offset + result.weeks.length;
+      setHistoryHasMore(result.hasMore);
+    } catch (e) {
+      console.error('Failed to load goal history', e);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  function toggleHistory() {
+    const willOpen = !historyOpen;
+    setHistoryOpen(willOpen);
+    // Lazy fetch: only on first expand, when data hasn't been loaded yet
+    if (willOpen && historyData === null) {
+      fetchHistory(false);
+    }
+  }
+
+  function loadMore() {
+    fetchHistory(true);
+  }
+
+  // ── Week label helper ────────────────────────────────────────────────────────
+
+  function weekLabel(weekStartStr) {
+    const start = new Date(weekStartStr + 'T00:00:00');
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${fmt(start)} – ${fmt(end)}`;
+  }
+
+  // ── Rate bar color (reuses StatCard color logic) ─────────────────────────────
+
+  function rateColor(pct) {
+    if (pct >= 70) return C.good;
+    if (pct >= 40) return C.warn;
+    return C.bad;
+  }
 
   function handleSave(data) {
     if (data.id) {
@@ -116,6 +199,113 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
         </div>
       )}
 
+      {/* ── Past Weeks History (collapsible, lazy-loaded) ──────────────────── */}
+      <div style={{ marginTop: 16, borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
+        <button
+          onClick={toggleHistory}
+          className="hs-btn"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '4px 0', color: C.sub, fontSize: 12.5, fontWeight: 600,
+            fontFamily: "'Outfit', sans-serif",
+          }}
+        >
+          {historyOpen
+            ? <ChevronDown size={14} strokeWidth={2.4} />
+            : <ChevronRight size={14} strokeWidth={2.4} />
+          }
+          Past Weeks
+        </button>
+
+        {historyOpen && (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {historyLoading && !historyData && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 0', color: C.sub, gap: 8, fontSize: 12.5 }}>
+                <Loader2 size={14} className="hs-spin" style={{ animation: 'spin 1s linear infinite' }} />
+                Loading history…
+              </div>
+            )}
+
+            {historyData && historyData.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '12px 0', color: C.sub, fontSize: 12.5 }}>
+                No past weeks with goals yet.
+              </div>
+            )}
+
+            {historyData && historyData.length > 0 && (
+              <>
+                {historyData.map(w => (
+                  <div key={w.weekStart} style={{
+                    padding: '10px 12px', borderRadius: 12,
+                    background: 'rgba(255,255,255,0.025)',
+                    border: `1px solid rgba(255,255,255,0.05)`,
+                    boxSizing: 'border-box',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                      <span style={{
+                        fontSize: 12, fontWeight: 600, color: C.ink,
+                        fontFamily: "'Outfit', sans-serif",
+                      }}>
+                        {weekLabel(w.weekStart)}
+                      </span>
+                      {w.completionRate !== null ? (
+                        <span style={{
+                          fontSize: 11.5, fontFamily: "'JetBrains Mono',monospace",
+                          fontWeight: 700, color: rateColor(w.completionRate),
+                        }}>
+                          {w.completionRate}% ({w.completedSum}/{w.targetSum})
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 11.5, color: C.sub, fontStyle: 'italic' }}>
+                          No goals set
+                        </span>
+                      )}
+                    </div>
+                    {w.completionRate !== null && (
+                      <div style={{ height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${Math.min(100, w.completionRate)}%`, height: '100%', borderRadius: 999,
+                          background: rateColor(w.completionRate),
+                          transition: 'width .4s cubic-bezier(0.16, 1, 0.3, 1)',
+                        }} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {historyHasMore && (
+                  <button
+                    onClick={loadMore}
+                    disabled={historyLoading}
+                    className="hs-btn"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      width: '100%', padding: '9px 0', borderRadius: 10,
+                      background: 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${C.line}`,
+                      color: C.sub, fontSize: 12, fontWeight: 600,
+                      cursor: historyLoading ? 'wait' : 'pointer',
+                      opacity: historyLoading ? 0.6 : 1,
+                      fontFamily: "'Outfit', sans-serif",
+                    }}
+                  >
+                    {historyLoading ? (
+                      <>
+                        <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                        Loading…
+                      </>
+                    ) : (
+                      'Load more'
+                    )}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       {showModal && (
         <GoalModal
           goal={editGoal}
@@ -124,6 +314,11 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
           onClose={() => { setShowModal(false); setEditGoal(null); }}
         />
       )}
+
+      {/* Inline keyframe for spinner — reuses pattern from elsewhere in the app */}
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

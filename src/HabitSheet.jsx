@@ -257,10 +257,53 @@ export default function HabitSheet() {
       .catch(showError);
   }
   function clearCompletedTasks() {
-    if (!tasks.some(t => t.done)) return;
+    const toClear = tasks.filter(t => t.done && !t.plannedDate);
+    if (toClear.length === 0) return;
+    const toClearIds = new Set(toClear.map(t => t.id));
+
+    // Optimistic local update
+    setTasks(prev => prev.filter(t => !toClearIds.has(t.id)));
+
     tasksDb.clearCompletedTaskRows()
-      .then(() => { setTasks(prev => prev.filter(t => !t.done)); showToast('Completed tasks cleared'); })
-      .catch(showError);
+      .then(() => {
+        showToast('Completed tasks cleared');
+      })
+      .catch(err => {
+        // Rollback on failure
+        setTasks(prev => [...prev, ...toClear]);
+        showError(err);
+      });
+  }
+
+  function cleanupStaleDone(staleDoneTasks) {
+    if (!staleDoneTasks || staleDoneTasks.length === 0) return Promise.resolve();
+
+    const deleteIds = staleDoneTasks.filter(t => t.source === 'quick').map(t => t.id);
+    const unplanIds = staleDoneTasks.filter(t => t.source !== 'quick').map(t => t.id);
+    const deleteSet = new Set(deleteIds);
+    const unplanSet = new Set(unplanIds);
+
+    // Optimistic local update
+    setTasks(prev => prev
+      .filter(t => !deleteSet.has(t.id))
+      .map(t => unplanSet.has(t.id) ? { ...t, plannedDate: null } : t)
+    );
+
+    return tasksDb.batchCleanupStaleDoneTasks({ deleteIds, unplanIds })
+      .catch(err => {
+        // Rollback state by restoring the original state of failed items
+        setTasks(prev => {
+          const restoredMap = new Map(staleDoneTasks.map(t => [t.id, t]));
+          const updated = prev.map(t => restoredMap.has(t.id) ? restoredMap.get(t.id) : t);
+          const existingIds = new Set(updated.map(t => t.id));
+          for (const t of staleDoneTasks) {
+            if (!existingIds.has(t.id)) updated.push(t);
+          }
+          return updated;
+        });
+        showError(err);
+        throw err;
+      });
   }
   function addCategory(cat) {
     tasksDb.createTaskCategory(cat)
@@ -942,6 +985,7 @@ export default function HabitSheet() {
             onAddGoal={addGoal}
             onUpdateGoal={updateGoal}
             onDeleteGoal={deleteGoal}
+            onCleanupStaleDone={cleanupStaleDone}
           />
         )}
 

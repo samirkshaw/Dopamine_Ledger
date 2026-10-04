@@ -100,8 +100,27 @@ export async function deleteTaskRow(id) {
 
 export async function clearCompletedTaskRows() {
   const user_id = await uid();
-  const { error } = await supabase.from('tasks').delete().eq('user_id', user_id).eq('done', true);
+  const { error } = await supabase.from('tasks').delete()
+    .eq('user_id', user_id)
+    .eq('done', true)
+    .is('planned_date', null);
   if (error) throw error;
+}
+
+export async function batchCleanupStaleDoneTasks({ deleteIds = [], unplanIds = [] }) {
+  const user_id = await uid();
+  const ops = [];
+  if (deleteIds.length > 0) {
+    ops.push(supabase.from('tasks').delete().eq('user_id', user_id).in('id', deleteIds));
+  }
+  if (unplanIds.length > 0) {
+    ops.push(supabase.from('tasks').update({ planned_date: null }).eq('user_id', user_id).in('id', unplanIds));
+  }
+  if (ops.length === 0) return;
+  const results = await Promise.all(ops);
+  for (const { error } of results) {
+    if (error) throw error;
+  }
 }
 
 export async function reassignTasksCategory(fromCategoryId, toCategoryId) {

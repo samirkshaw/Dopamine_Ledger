@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Check, Plus, X, ChevronsRight, Trash2, Clock } from 'lucide-react';
 import { C } from '../../theme.js';
 import { todayStr } from '../../lib/dateHelpers.js';
@@ -7,12 +7,39 @@ import StatCard from '../common/StatCard.jsx';
 import WeeklyGoals from './WeeklyGoals.jsx';
 import TaskModal from '../tasks/TaskModal.jsx';
 
-export default function TodayView({ tasks, categories, goals, onToggle, onAddTask, onUpdateTask, onSetPlannedDate, onDeleteTask, onAddGoal, onUpdateGoal, onDeleteGoal }) {
+export default function TodayView({ tasks, categories, goals, onToggle, onAddTask, onUpdateTask, onSetPlannedDate, onDeleteTask, onAddGoal, onUpdateGoal, onDeleteGoal, onCleanupStaleDone }) {
   const today = todayStr();
   const [quickTitle, setQuickTitle] = useState('');
   const [quickGoalId, setQuickGoalId] = useState('');
   const [quickGoalContribution, setQuickGoalContribution] = useState(1);
   const [editTask, setEditTask] = useState(null);
+
+  // ── Auto-cleanup done tasks from past days on rollover ─────────────────────
+  const inFlightStaleDoneRef = useRef(new Set());
+
+  useEffect(() => {
+    if (!onCleanupStaleDone) return;
+    const staleDone = tasks.filter(t =>
+      t.plannedDate &&
+      t.plannedDate < today &&
+      t.done &&
+      !inFlightStaleDoneRef.current.has(t.id)
+    );
+
+    if (staleDone.length === 0) return;
+
+    // Track IDs in flight to block React 18 StrictMode duplicate invocations
+    staleDone.forEach(t => inFlightStaleDoneRef.current.add(t.id));
+
+    onCleanupStaleDone(staleDone)
+      .then(() => {
+        staleDone.forEach(t => inFlightStaleDoneRef.current.delete(t.id));
+      })
+      .catch(() => {
+        // Evict on failure so they can be retried on next render
+        staleDone.forEach(t => inFlightStaleDoneRef.current.delete(t.id));
+      });
+  }, [tasks, today, onCleanupStaleDone]);
 
   // ── Derived task lists ──────────────────────────────────────────────────────
 

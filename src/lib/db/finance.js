@@ -43,6 +43,7 @@ function fromRow(t) {
   return {
     id: t.id, type: t.type, amount: t.amount, category: t.category_id,
     note: t.note, date: t.txn_date, account: t.account,
+    toAccount: t.to_account || null,
   };
 }
 
@@ -54,18 +55,22 @@ export async function listTransactions() {
 
 export async function createTransactionRow(txn) {
   const user_id = await uid();
+  const to_account = txn.type === 'transfer' ? (txn.toAccount || (txn.account === 'bank' ? 'cash' : 'bank')) : null;
   const { data, error } = await supabase.from('transactions').insert({
     user_id, type: txn.type, amount: txn.amount, category_id: txn.category || null,
     note: txn.note || null, txn_date: txn.date, account: txn.account,
+    to_account,
   }).select().single();
   if (error) throw error;
   return fromRow(data);
 }
 
 export async function updateTransactionRow(id, txn) {
+  const to_account = txn.type === 'transfer' ? (txn.toAccount || (txn.account === 'bank' ? 'cash' : 'bank')) : null;
   const { error } = await supabase.from('transactions').update({
     type: txn.type, amount: txn.amount, category_id: txn.category || null,
     note: txn.note || null, txn_date: txn.date, account: txn.account,
+    to_account,
   }).eq('id', id);
   if (error) throw error;
 }

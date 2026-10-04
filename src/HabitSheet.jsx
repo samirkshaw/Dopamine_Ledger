@@ -286,7 +286,7 @@ export default function HabitSheet() {
 
   function addTransaction(txn) {
     financeDb.createTransactionRow(txn)
-      .then(row => { setTransactions(prev => [row, ...prev]); showToast(txn.type === 'income' ? 'Income added' : 'Expense added'); })
+      .then(row => { setTransactions(prev => [row, ...prev]); showToast(txn.type === 'income' ? 'Income added' : txn.type === 'transfer' ? 'Transfer added' : 'Expense added'); })
       .catch(showError);
   }
   function updateTransaction(txn) {

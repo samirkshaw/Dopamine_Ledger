@@ -83,7 +83,8 @@ create table transactions (
   user_id uuid references auth.users not null,
   category_id uuid references finance_categories(id) on delete set null,
   account text not null default 'bank',
-  type text not null check (type in ('income','expense')),
+  to_account text check (to_account in ('bank','cash')),  -- migration 010
+  type text not null check (type in ('income','expense','transfer')),  -- migration 010
   amount numeric not null check (amount > 0),
   note text,
   txn_date date not null default current_date,

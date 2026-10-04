@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Pencil, IndianRupee, TrendingUp, TrendingDown, Wallet, Landmark, Banknote } from 'lucide-react';
+import { Pencil, IndianRupee, TrendingUp, TrendingDown, Wallet, Landmark, Banknote, ArrowRightLeft } from 'lucide-react';
 import { C } from '../../theme.js';
 import { todayStr } from '../../lib/dateHelpers.js';
 import { fmtMoney } from '../../lib/format.js';
@@ -23,18 +23,22 @@ export default function FinanceTrackerView({ transactions, categories, filterCat
     let cashBalance = 0, bankBalance = 0;
     for (const t of transactions) {
       const amt = Number(t.amount) || 0;
-      const sign = t.type === 'income' ? 1 : -1;
-      if ((t.account || 'bank') === 'cash') cashBalance += sign * amt;
-      else bankBalance += sign * amt;
-      if (t.type === 'income') {
+      if (t.type === 'transfer') {
+        const from = t.account || 'bank';
+        const to = t.toAccount || (from === 'bank' ? 'cash' : 'bank');
+        if (from === 'cash') cashBalance -= amt; else bankBalance -= amt;
+        if (to === 'cash') cashBalance += amt; else bankBalance += amt;
+      } else if (t.type === 'income') {
+        if ((t.account || 'bank') === 'cash') cashBalance += amt; else bankBalance += amt;
         totalIncome += amt;
         if (monthKey(t.date) === thisMonth) monthIncome += amt;
       } else {
+        if ((t.account || 'bank') === 'cash') cashBalance -= amt; else bankBalance -= amt;
         totalExpense += amt;
         if (monthKey(t.date) === thisMonth) monthExpense += amt;
       }
     }
-    const balance = totalIncome - totalExpense;
+    const balance = cashBalance + bankBalance;
     const monthNet = monthIncome - monthExpense;
     const savingsRate = monthIncome ? Math.round((monthNet / monthIncome) * 100) : 0;
     return { totalIncome, totalExpense, balance, monthIncome, monthExpense, monthNet, savingsRate, cashBalance, bankBalance };
@@ -46,7 +50,8 @@ export default function FinanceTrackerView({ transactions, categories, filterCat
       let inc = 0, exp = 0;
       for (const t of transactions) {
         if (monthKey(t.date) !== k) continue;
-        if (t.type === 'income') inc += Number(t.amount) || 0; else exp += Number(t.amount) || 0;
+        if (t.type === 'income') inc += Number(t.amount) || 0;
+        else if (t.type === 'expense') exp += Number(t.amount) || 0;
       }
       return { key: k, label: monthShortLabel(k), inc, exp };
     });
@@ -196,6 +201,13 @@ export default function FinanceTrackerView({ transactions, categories, filterCat
             color: typeFilter === 'expense' ? '#fff' : C.sub,
             boxShadow: typeFilter === 'expense' ? '0 2px 10px rgba(239, 68, 68, 0.35)' : 'none',
           }}>Expenses</button>
+          <button onClick={() => setTypeFilter('transfer')} className="hs-btn" style={{
+            fontFamily: "'Outfit', sans-serif", fontSize: 11.5, fontWeight: 600, padding: '6px 14px', borderRadius: 999,
+            border: `1.4px solid ${typeFilter === 'transfer' ? '#8B5CF6' : C.line}`,
+            background: typeFilter === 'transfer' ? 'linear-gradient(135deg, #8B5CF6, #6D28D9)' : 'rgba(255,255,255,0.03)',
+            color: typeFilter === 'transfer' ? '#fff' : C.sub,
+            boxShadow: typeFilter === 'transfer' ? '0 2px 10px rgba(139, 92, 246, 0.35)' : 'none',
+          }}>Transfers</button>
           <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{
             fontFamily: "'Outfit', sans-serif", fontSize: 12, padding: '7px 12px', borderRadius: 999,
             border: `1.4px solid ${C.line}`, background: '#181324', color: C.sub, outline: 'none',
@@ -233,37 +245,59 @@ export default function FinanceTrackerView({ transactions, categories, filterCat
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {sorted.map(t => {
-              const cat = finCatById(categories, t.category);
+              const isTransfer = t.type === 'transfer';
+              const cat = isTransfer ? null : finCatById(categories, t.category);
               const isIncome = t.type === 'income';
+              const fromAcc = (t.account || 'bank') === 'cash' ? 'Cash' : 'Bank';
+              const toAcc = (t.toAccount || (t.account === 'cash' ? 'bank' : 'cash')) === 'cash' ? 'Cash' : 'Bank';
+              const accentColor = isTransfer ? '#8B5CF6' : cat.color;
               return (
                 <div key={t.id} className="hs-row" style={{
                   position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
                   borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
-                  borderLeft: `4px solid ${cat.color}`,
+                  borderLeft: `4px solid ${accentColor}`,
                 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: isIncome ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                    border: `1px solid ${isIncome ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                    color: isIncome ? '#10B981' : '#EF4444',
-                  }}>{isIncome ? <TrendingUp size={16} /> : <TrendingDown size={16} />}</div>
+                    background: isTransfer
+                      ? 'rgba(139, 92, 246, 0.15)'
+                      : isIncome ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    border: `1px solid ${isTransfer ? 'rgba(139, 92, 246, 0.3)' : isIncome ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                    color: isTransfer ? '#A78BFA' : isIncome ? '#10B981' : '#EF4444',
+                  }}>
+                    {isTransfer ? <ArrowRightLeft size={16} /> : isIncome ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, marginBottom: 4, wordBreak: 'break-word' }}>{t.note || cat.name}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, marginBottom: 4, wordBreak: 'break-word' }}>
+                      {t.note || (isTransfer ? `Transfer (${fromAcc} → ${toAcc})` : cat.name)}
+                    </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: C.sub }}>
-                      <span style={{ color: cat.color, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>{cat.name}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {(t.account || 'bank') === 'cash' ? <Banknote size={11} /> : <Landmark size={11} />}
-                        {(t.account || 'bank') === 'cash' ? 'Cash' : 'Bank'}
+                      <span style={{ color: accentColor, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+                        {isTransfer ? 'Transfer' : cat.name}
                       </span>
+                      {isTransfer ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {fromAcc === 'Cash' ? <Banknote size={11} /> : <Landmark size={11} />} {fromAcc}
+                          <span>→</span>
+                          {toAcc === 'Cash' ? <Banknote size={11} /> : <Landmark size={11} />} {toAcc}
+                        </span>
+                      ) : (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {(t.account || 'bank') === 'cash' ? <Banknote size={11} /> : <Landmark size={11} />}
+                          {(t.account || 'bank') === 'cash' ? 'Cash' : 'Bank'}
+                        </span>
+                      )}
                       <span>{t.date}</span>
                     </div>
                   </div>
                   <div style={{
                     fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 15,
-                    color: isIncome ? '#10B981' : '#EF4444', whiteSpace: 'nowrap',
-                    textShadow: isIncome ? '0 0 12px rgba(16, 185, 129, 0.3)' : '0 0 12px rgba(239, 68, 68, 0.3)',
+                    color: isTransfer ? '#C4B5FD' : isIncome ? '#10B981' : '#EF4444', whiteSpace: 'nowrap',
+                    textShadow: isTransfer
+                      ? '0 0 12px rgba(139, 92, 246, 0.3)'
+                      : isIncome ? '0 0 12px rgba(16, 185, 129, 0.3)' : '0 0 12px rgba(239, 68, 68, 0.3)',
                   }}>
-                    {isIncome ? '+' : '−'}{fmtMoney(Math.abs(t.amount))}
+                    {isTransfer ? '' : isIncome ? '+' : '−'}{fmtMoney(Math.abs(t.amount))}
                   </div>
                   <button onClick={() => onEdit(t)} className="hs-btn" style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',

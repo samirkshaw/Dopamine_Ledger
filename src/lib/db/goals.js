@@ -9,6 +9,7 @@ async function uid() {
 function fromRow(g) {
   return {
     id: g.id, title: g.title, targetCount: g.target_count,
+    completedCount: g.completed_count ?? 0,
     unit: g.unit, weekStart: g.week_start, createdAt: g.created_at,
   };
 }
@@ -44,15 +45,33 @@ export async function deleteGoalRow(id) {
 }
 
 /**
- * Fetch past-week goals + their completed tasks, bounded by `limit` distinct weeks.
+ * Atomically increment (or decrement) a goal's completed_count.
+ * Uses Supabase RPC-free approach: read current value, then update.
+ * @param {string} goalId
+ * @param {number} delta - positive to increment, negative to decrement
+ */
+export async function incrementGoalProgress(goalId, delta) {
+  // Read current completed_count
+  const { data: goal, error: rErr } = await supabase.from('goals')
+    .select('completed_count').eq('id', goalId).single();
+  if (rErr) throw rErr;
+  const newCount = Math.max(0, (goal.completed_count ?? 0) + delta);
+  const { error: wErr } = await supabase.from('goals')
+    .update({ completed_count: newCount }).eq('id', goalId);
+  if (wErr) throw wErr;
+}
+
+/**
+ * Fetch past-week goals with their stored completed_count, bounded by `limit` distinct weeks.
+ * Progress is read directly from goals.completed_count — no task-row join needed.
+ * This means historical rates survive "Clear Completed" and task deletion.
  * @param {string} currentWeekStart - Monday of the current week (ISO date string).
  * @param {number} limit - Max number of distinct past weeks to return (default 10).
  * @param {number} offset - Number of distinct past weeks to skip (for pagination).
- * @returns {{ weeks: Array<{weekStart, goals, doneTasks}>, hasMore: boolean }}
+ * @returns {{ weeks: Array<{weekStart, goals}>, hasMore: boolean }}
  */
 export async function listGoalHistory(currentWeekStart, limit = 10, offset = 0) {
   // 1. Fetch past goals (week_start < current week), ordered most-recent-first.
-  //    We over-fetch rows to cover limit+1 distinct weeks so we can detect hasMore.
   const { data: goalRows, error: gErr } = await supabase.from('goals').select('*')
     .lt('week_start', currentWeekStart)
     .order('week_start', { ascending: false });
@@ -61,35 +80,20 @@ export async function listGoalHistory(currentWeekStart, limit = 10, offset = 0) 
 
   // 2. Extract distinct week_starts, apply offset + limit.
   const allWeekStarts = [...new Set(goalRows.map(g => g.week_start))];
-  // Already sorted desc because the query was ordered desc.
   const sliced = allWeekStarts.slice(offset, offset + limit);
   const hasMore = allWeekStarts.length > offset + limit;
 
   if (sliced.length === 0) return { weeks: [], hasMore: false };
 
-  // 3. Filter goals to only the selected weeks.
+  // 3. Filter goals to only the selected weeks and build week objects.
   const slicedSet = new Set(sliced);
   const filteredGoals = goalRows.filter(g => slicedSet.has(g.week_start));
-  const goalIds = filteredGoals.map(g => g.id);
 
-  // 4. Fetch done tasks linked to those goals (single round-trip).
-  let doneTasks = [];
-  if (goalIds.length > 0) {
-    const { data: taskRows, error: tErr } = await supabase.from('tasks').select('id, goal_id, goal_contribution')
-      .in('goal_id', goalIds)
-      .eq('done', true);
-    if (tErr) throw tErr;
-    doneTasks = taskRows || [];
-  }
-
-  // 5. Group into week objects.
   const weeks = sliced.map(ws => ({
     weekStart: ws,
     goals: filteredGoals.filter(g => g.week_start === ws).map(g => ({
-      id: g.id, title: g.title, targetCount: g.target_count, unit: g.unit,
-    })),
-    doneTasks: doneTasks.filter(t => filteredGoals.some(g => g.id === t.goal_id && g.week_start === ws)).map(t => ({
-      id: t.id, goalId: t.goal_id, goalContribution: t.goal_contribution,
+      id: g.id, title: g.title, targetCount: g.target_count,
+      completedCount: g.completed_count ?? 0, unit: g.unit,
     })),
   }));
 

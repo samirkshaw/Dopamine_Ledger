@@ -240,6 +240,16 @@ export default function HabitSheet() {
     tasksDb.setTaskDone(id, done, doneAt)
       .then(() => setTasks(prev => prev.map(x => x.id === id ? { ...x, done, doneAt } : x)))
       .catch(showError);
+    // Increment/decrement the linked goal's completed_count
+    if (task.goalId) {
+      const delta = done ? (task.goalContribution || 1) : -(task.goalContribution || 1);
+      // Optimistic local update
+      setGoals(prev => prev.map(g => g.id === task.goalId
+        ? { ...g, completedCount: Math.max(0, (g.completedCount || 0) + delta) }
+        : g
+      ));
+      goalsDb.incrementGoalProgress(task.goalId, delta).catch(showError);
+    }
   }
   function setTaskPlannedDate(id, date) {
     tasksDb.setPlannedDate(id, date)

@@ -17,19 +17,14 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
   const historyOffsetRef = useRef(0);
   const PAGE_SIZE = 10;
 
-  // Progress for each goal — computed from the full tasks array
+  // Progress for each goal — read directly from goal.completedCount (decoupled from task rows)
   const goalProgress = useMemo(() => {
     const map = {};
     for (const g of goals) {
-      map[g.id] = 0;
-    }
-    for (const t of tasks) {
-      if (t.goalId && t.done && map[t.goalId] !== undefined) {
-        map[t.goalId] += (t.goalContribution || 1);
-      }
+      map[g.id] = g.completedCount ?? g.completed_count ?? 0;
     }
     return map;
-  }, [goals, tasks]);
+  }, [goals]);
 
   // ── History helpers ──────────────────────────────────────────────────────────
 
@@ -45,14 +40,8 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
         let completedSum = 0;
         for (const g of w.goals) {
           targetSum += g.targetCount;
-          // Sum contributions from done tasks for this goal
-          let progress = 0;
-          for (const t of w.doneTasks) {
-            if (t.goalId === g.id) {
-              progress += (t.goalContribution || 1);
-            }
-          }
-          // Cap at goal's target
+          // Progress is read directly from completedCount, capped at targetCount
+          const progress = g.completedCount ?? g.completed_count ?? 0;
           completedSum += Math.min(progress, g.targetCount);
         }
         const completionRate = targetSum > 0 ? Math.round((completedSum / targetSum) * 100) : null;

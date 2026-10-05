@@ -1,17 +1,19 @@
 import { C, FONT_IMPORT } from '../../theme.js';
 import { useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
+import useEnterSubmit from '../../lib/useEnterSubmit.js';
 
 export default function GoalModal({ goal, onClose, onSave, onDelete }) {
   const [title, setTitle] = useState(goal?.title || '');
   const [targetCount, setTargetCount] = useState(goal?.targetCount || '');
   const [unit, setUnit] = useState(goal?.unit || '');
+  const handleEnter = useEnterSubmit(submit);
 
   function submit() {
     if (!title.trim()) return;
     const count = Number(targetCount);
-    if (!count || count <= 0) return;
-    onSave({ id: goal?.id, title: title.trim(), targetCount: count, unit: unit.trim() });
+    const tc = (count && count > 0) ? count : null;
+    onSave({ id: goal?.id, title: title.trim(), targetCount: tc, unit: unit.trim() });
   }
 
   const inputStyle = {
@@ -22,7 +24,7 @@ export default function GoalModal({ goal, onClose, onSave, onDelete }) {
 
   return (
     <div className="hs-modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(6,5,10,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, animation: 'fadeIn .15s ease' }} onClick={onClose}>
-      <div className="hs-modal-card" onClick={e => e.stopPropagation()} style={{ background: '#18141F', borderRadius: 18, width: '90%', maxWidth: 380, padding: 20, animation: 'slideUp .2s ease', fontFamily: "'Inter',sans-serif", color: C.ink }}>
+      <div className="hs-modal-card" onClick={e => e.stopPropagation()} onKeyDown={handleEnter} style={{ background: '#18141F', borderRadius: 18, width: '90%', maxWidth: 380, padding: 20, animation: 'slideUp .2s ease', fontFamily: "'Inter',sans-serif", color: C.ink }}>
         <style>{FONT_IMPORT}</style>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 15 }}>{goal ? 'Edit Goal' : 'New Weekly Goal'}</div>

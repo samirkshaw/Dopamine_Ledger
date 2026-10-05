@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { C, CAT_PALETTE, FONT_IMPORT } from '../../theme.js';
 import CategoryEditRow from '../common/CategoryEditRow.jsx';
+import useEnterSubmit from '../../lib/useEnterSubmit.js';
 
 export default function NoteCategoryPanel({ categories, onClose, onAdd, onEdit, onDelete }) {
   const [name, setName] = useState('');
   const [color, setColor] = useState(CAT_PALETTE[0]);
+  const handleEnter = useEnterSubmit(submit);
 
   function submit() {
     if (!name.trim()) return;
@@ -30,7 +32,7 @@ export default function NoteCategoryPanel({ categories, onClose, onAdd, onEdit, 
           {categories.map(c => (
             <CategoryEditRow key={c.id} cat={c} canDelete={categories.length > 1} onSave={onEdit} onDelete={onDelete} />
           ))}
-          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }} onKeyDown={handleEnter}>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="New category name" style={{
               width: '100%', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`, borderRadius: 10,
               padding: '9px 11px', color: C.ink, fontSize: 13, outline: 'none',

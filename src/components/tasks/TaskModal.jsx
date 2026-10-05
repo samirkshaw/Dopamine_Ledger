@@ -2,6 +2,7 @@ import { C, FONT_IMPORT } from '../../theme.js';
 import { useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { PRIORITY } from './taskHelpers.js';
+import useEnterSubmit from '../../lib/useEnterSubmit.js';
 
 export default function TaskModal({ task, categories, goals, onClose, onSave, onDelete }) {
   const [title, setTitle] = useState(task?.title || '');
@@ -12,6 +13,7 @@ export default function TaskModal({ task, categories, goals, onClose, onSave, on
   const [goalId, setGoalId] = useState(task?.goalId || '');
   const [goalContribution, setGoalContribution] = useState(task?.goalContribution || 1);
   const [scheduledTime, setScheduledTime] = useState(task?.scheduledTime || '');
+  const handleEnter = useEnterSubmit(submit);
 
   function submit() {
     if (!title.trim()) return;
@@ -34,7 +36,7 @@ export default function TaskModal({ task, categories, goals, onClose, onSave, on
 
   return (
     <div className="hs-modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(6,5,10,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, animation: 'fadeIn .15s ease' }} onClick={onClose}>
-      <div className="hs-modal-card" onClick={e => e.stopPropagation()} style={{ background: '#18141F', borderRadius: 18, width: '90%', maxWidth: 380, padding: 20, animation: 'slideUp .2s ease', fontFamily: "'Inter',sans-serif", color: C.ink, maxHeight: '90vh', overflowY: 'auto' }}>
+      <div className="hs-modal-card" onClick={e => e.stopPropagation()} onKeyDown={handleEnter} style={{ background: '#18141F', borderRadius: 18, width: '90%', maxWidth: 380, padding: 20, animation: 'slideUp .2s ease', fontFamily: "'Inter',sans-serif", color: C.ink, maxHeight: '90vh', overflowY: 'auto' }}>
         <style>{FONT_IMPORT}</style>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 15 }}>{task ? 'Edit Task' : 'New Task'}</div>
@@ -68,7 +70,7 @@ export default function TaskModal({ task, categories, goals, onClose, onSave, on
             <select value={goalId} onChange={e => setGoalId(e.target.value)} style={inputStyle}>
               <option value="">None</option>
               {availableGoals.map(g => (
-                <option key={g.id} value={g.id}>{g.title} ({g.targetCount} {g.unit})</option>
+                <option key={g.id} value={g.id}>{g.title}{g.targetCount ? ` (${g.targetCount}${g.unit ? ` ${g.unit}` : ''})` : ''}</option>
               ))}
             </select>
             {goalId && (

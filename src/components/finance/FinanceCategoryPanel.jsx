@@ -2,11 +2,13 @@ import { C, CAT_PALETTE, FONT_IMPORT } from '../../theme.js';
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import CategoryEditRow from '../common/CategoryEditRow.jsx';
+import useEnterSubmit from '../../lib/useEnterSubmit.js';
 
 export default function FinanceCategoryPanel({ categories, onClose, onAdd, onEdit, onDelete }) {
   const [name, setName] = useState('');
   const [color, setColor] = useState(CAT_PALETTE[0]);
   const [kind, setKind] = useState('expense');
+  const handleEnter = useEnterSubmit(submit);
 
   function submit() {
     if (!name.trim()) return;
@@ -39,7 +41,7 @@ export default function FinanceCategoryPanel({ categories, onClose, onAdd, onEdi
           {expenseCats.map(c => (
             <CategoryEditRow key={c.id} cat={c} canDelete={categories.length > 1} onSave={onEdit} onDelete={onDelete} />
           ))}
-          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }} onKeyDown={handleEnter}>
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={() => setKind('income')} className="hs-btn" style={{
                 flex: 1, padding: '7px 0', borderRadius: 9, fontSize: 11.5, fontWeight: 600,

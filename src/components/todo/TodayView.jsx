@@ -6,6 +6,7 @@ import { priRank, catById, PRIORITY } from '../tasks/taskHelpers.js';
 import StatCard from '../common/StatCard.jsx';
 import WeeklyGoals from './WeeklyGoals.jsx';
 import TaskModal from '../tasks/TaskModal.jsx';
+import useEnterSubmit from '../../lib/useEnterSubmit.js';
 
 export default function TodayView({ tasks, categories, goals, onToggle, onAddTask, onUpdateTask, onSetPlannedDate, onDeleteTask, onAddGoal, onUpdateGoal, onDeleteGoal, onCleanupStaleDone }) {
   const today = todayStr();
@@ -13,6 +14,7 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
   const [quickGoalId, setQuickGoalId] = useState('');
   const [quickGoalContribution, setQuickGoalContribution] = useState(1);
   const [editTask, setEditTask] = useState(null);
+  const handleEnterQuick = useEnterSubmit(submitQuick);
 
   // ── Auto-cleanup done tasks from past days on rollover ─────────────────────
   const inFlightStaleDoneRef = useRef(new Set());
@@ -327,7 +329,7 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
       )}
 
       {/* ── Quick-add bar ─────────────────────────────────────────────────── */}
-      <div className="hs-card-hover hs-quick-add-bar" style={{
+      <div className="hs-card-hover hs-quick-add-bar" onKeyDown={handleEnterQuick} style={{
         background: 'rgba(21, 17, 32, 0.7)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
@@ -342,7 +344,6 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
         <input
           value={quickTitle}
           onChange={e => setQuickTitle(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') submitQuick(); }}
           placeholder="Quick-add to today…"
           className="hs-touch-target"
           style={{
@@ -373,7 +374,6 @@ export default function TodayView({ tasks, categories, goals, onToggle, onAddTas
             min="1"
             value={quickGoalContribution}
             onChange={e => setQuickGoalContribution(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') submitQuick(); }}
             placeholder="1"
             title="Counts as (toward goal)"
             className="hs-touch-target"

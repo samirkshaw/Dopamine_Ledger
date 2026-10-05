@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Pencil } from 'lucide-react';
 import { C } from '../../theme.js';
+import useEnterSubmit from '../../lib/useEnterSubmit.js';
 
 export default function InlineAddTask({ categories, onAddTask }) {
   const [title, setTitle] = useState('');
@@ -9,6 +10,7 @@ export default function InlineAddTask({ categories, onAddTask }) {
   const [due, setDue] = useState('');
   const [notes, setNotes] = useState('');
   const [showNotes, setShowNotes] = useState(false);
+  const handleEnter = useEnterSubmit(submit);
 
   function submit() {
     if (!title.trim()) return;
@@ -17,7 +19,7 @@ export default function InlineAddTask({ categories, onAddTask }) {
   }
 
   return (
-    <div className="hs-card-hover" style={{
+    <div className="hs-card-hover" onKeyDown={handleEnter} style={{
       background: 'rgba(21, 17, 32, 0.7)',
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
@@ -30,7 +32,6 @@ export default function InlineAddTask({ categories, onAddTask }) {
         <input
           value={title}
           onChange={e => setTitle(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') submit(); }}
           placeholder="What needs doing?"
           className="hs-touch-target"
           style={{

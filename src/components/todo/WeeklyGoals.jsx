@@ -39,6 +39,8 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
         let targetSum = 0;
         let completedSum = 0;
         for (const g of w.goals) {
+          // Exclude target-less goals from blended rate — they can't contribute a percentage
+          if (g.targetCount == null || g.targetCount <= 0) continue;
           targetSum += g.targetCount;
           // Progress is read directly from completedCount, capped at targetCount
           const progress = g.completedCount ?? g.completed_count ?? 0;
@@ -151,8 +153,9 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {goals.map(g => {
             const progress = goalProgress[g.id] || 0;
-            const pct = Math.min(100, Math.round((progress / g.targetCount) * 100));
-            const isMet = progress >= g.targetCount;
+            const hasTarget = g.targetCount != null && g.targetCount > 0;
+            const pct = hasTarget ? Math.min(100, Math.round((progress / g.targetCount) * 100)) : 0;
+            const isMet = hasTarget && progress >= g.targetCount;
             return (
               <div key={g.id} className="hs-row" style={{
                 display: 'flex', alignItems: 'center', gap: 10,
@@ -165,19 +168,25 @@ export default function WeeklyGoals({ goals, tasks, onAddGoal, onUpdateGoal, onD
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: C.ink, wordBreak: 'break-word' }}>{g.title}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ flex: 1, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                      <div style={{
-                        width: `${pct}%`, height: '100%', borderRadius: 999,
-                        background: isMet ? 'linear-gradient(90deg, #10B981, #34D399)' : 'linear-gradient(90deg, #8B5CF6, #A78BFA)',
-                        boxShadow: isMet ? '0 0 8px rgba(52, 211, 153, 0.4)' : '0 0 8px rgba(139, 92, 246, 0.4)',
-                        transition: 'width .3s ease',
-                      }} />
+                  {hasTarget ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${pct}%`, height: '100%', borderRadius: 999,
+                          background: isMet ? 'linear-gradient(90deg, #10B981, #34D399)' : 'linear-gradient(90deg, #8B5CF6, #A78BFA)',
+                          boxShadow: isMet ? '0 0 8px rgba(52, 211, 153, 0.4)' : '0 0 8px rgba(139, 92, 246, 0.4)',
+                          transition: 'width .3s ease',
+                        }} />
+                      </div>
+                      <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: isMet ? '#34D399' : C.sub, whiteSpace: 'nowrap', fontWeight: 700 }}>
+                        {progress} / {g.targetCount}{g.unit ? ` ${g.unit}` : ''}
+                      </span>
                     </div>
-                    <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: isMet ? '#34D399' : C.sub, whiteSpace: 'nowrap', fontWeight: 700 }}>
-                      {progress} / {g.targetCount}{g.unit ? ` ${g.unit}` : ''}
+                  ) : (
+                    <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: progress > 0 ? '#A78BFA' : C.sub, fontWeight: 700 }}>
+                      {progress} completed{g.unit ? ` ${g.unit}` : ''}
                     </span>
-                  </div>
+                  )}
                 </div>
                 <button onClick={() => { setEditGoal(g); setShowModal(true); }} className="hs-btn" style={{ background: 'none', border: 'none', color: C.sub, cursor: 'pointer', padding: 4, flexShrink: 0 }}>
                   <Pencil size={12} />

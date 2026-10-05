@@ -316,6 +316,12 @@ export default function NoteEditor({
           <input
             value={title}
             onChange={e => handleTitleChange(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                editor?.commands.focus('start');
+              }
+            }}
             onBlur={handleBlur}
             placeholder="Untitled Note"
             style={{

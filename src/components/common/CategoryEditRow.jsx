@@ -1,11 +1,21 @@
 import { useState } from 'react';
 import { X, Pencil } from 'lucide-react';
 import { C, CAT_PALETTE } from '../../theme.js';
+import useEnterSubmit from '../../lib/useEnterSubmit.js';
 
 export default function CategoryEditRow({ cat, canDelete, onSave, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(cat.name);
   const [color, setColor] = useState(cat.color);
+
+  function save() {
+    if (name.trim()) {
+      onSave(cat.id, { name: name.trim(), color });
+      setEditing(false);
+    }
+  }
+
+  const handleEnter = useEnterSubmit(save);
 
   if (!editing) {
     return (
@@ -56,6 +66,7 @@ export default function CategoryEditRow({ cat, canDelete, onSave, onDelete }) {
       <input
         value={name}
         onChange={e => setName(e.target.value)}
+        onKeyDown={handleEnter}
         autoFocus
         style={{
           width: '100%', background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.line}`,

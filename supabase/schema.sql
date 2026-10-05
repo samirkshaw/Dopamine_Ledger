@@ -43,7 +43,7 @@ create table goals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users not null,
   title text not null,
-  target_count numeric not null check (target_count > 0),
+  target_count numeric check (target_count is null or target_count > 0),  -- migration 011: optional
   unit text not null default '',
   week_start date not null,
   created_at timestamptz default now()

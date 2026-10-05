@@ -3,6 +3,7 @@ import { Plus, ArrowRightLeft, Landmark, Banknote } from 'lucide-react';
 import { C } from '../../theme.js';
 import { todayStr } from '../../lib/dateHelpers.js';
 import AccountToggle from './AccountToggle.jsx';
+import useEnterSubmit from '../../lib/useEnterSubmit.js';
 
 export default function InlineAddTransaction({ categories, onAdd }) {
   const [type, setType] = useState('expense');
@@ -13,6 +14,7 @@ export default function InlineAddTransaction({ categories, onAdd }) {
   const relevantCats = useMemo(() => categories.filter(c => c.kind === type), [categories, type]);
   const [category, setCategory] = useState(relevantCats[0]?.id ?? null);
   const [date, setDate] = useState(todayStr());
+  const handleEnter = useEnterSubmit(submit);
 
   useEffect(() => {
     if (type !== 'transfer' && !relevantCats.find(c => c.id === category)) {
@@ -48,7 +50,7 @@ export default function InlineAddTransaction({ categories, onAdd }) {
   const isBankToCash = account === 'bank' && toAccount === 'cash';
 
   return (
-    <div className="hs-card-hover" style={{
+    <div className="hs-card-hover" onKeyDown={handleEnter} style={{
       background: 'rgba(21, 17, 32, 0.7)',
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
@@ -114,7 +116,6 @@ export default function InlineAddTransaction({ categories, onAdd }) {
           type="number" min="0" step="0.01"
           value={amount}
           onChange={e => setAmount(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') submit(); }}
           placeholder="Amount"
           className="hs-touch-target"
           style={{
@@ -126,7 +127,6 @@ export default function InlineAddTransaction({ categories, onAdd }) {
         <input
           value={note}
           onChange={e => setNote(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') submit(); }}
           placeholder={isTransfer ? 'Transfer note (optional)' : 'What was it for?'}
           className="hs-touch-target"
           style={{

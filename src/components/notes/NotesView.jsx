@@ -3,6 +3,7 @@ import { Plus, Pin, BookOpen, Trash2, ArrowUpRight, Search, FileText, Sparkles, 
 import { C } from '../../theme.js';
 import { textOn } from '../../lib/format.js';
 import NoteEditor from './NoteEditor.jsx';
+import useEnterSubmit from '../../lib/useEnterSubmit.js';
 
 const LECTURE_TEMPLATE = `<h2>Topic</h2><p></p><h2>Key Points</h2><ul><li><p></p></li></ul><h2>Questions</h2><ul><li><p></p></li></ul>`;
 
@@ -121,6 +122,7 @@ export default function NotesView({
     setPromoteNote(null);
     setMobileShowEditor(true);
   }
+  const handleEnterPromote = useEnterSubmit(confirmPromote);
 
   function handleSelectNote(noteId) {
     setActiveNoteId(noteId);
@@ -531,6 +533,7 @@ export default function NotesView({
         >
           <div
             onClick={e => e.stopPropagation()}
+            onKeyDown={handleEnterPromote}
             style={{
               width: 440, maxWidth: '100%', background: '#151120',
               border: `1px solid ${C.line}`, borderRadius: 20, padding: 24,

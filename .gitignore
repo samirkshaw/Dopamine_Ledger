@@ -3,3 +3,11 @@ dist
 .DS_Store
 .env
 .env.example
+
+# Android secrets and keystores
+*.keystore
+*.jks
+keystore.properties
+
+# Firebase
+google-services.json
